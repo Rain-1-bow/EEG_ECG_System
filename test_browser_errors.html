@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错误检查</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-4">错误检查</h1>
+        <div id="error-display" class="bg-white p-6 rounded-lg shadow"></div>
+    </div>
+
+    <script>
+        // 重写console.log等方法来捕获日志
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        const originalConsoleInfo = console.info;
+        
+        const logs = [];
+        const errors = [];
+        const warnings = [];
+        const infos = [];
+        
+        console.log = function(...args) {
+            logs.push({ type: 'log', args });
+            originalConsoleLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            errors.push({ type: 'error', args });
+            originalConsoleError.apply(console, args);
+            displayErrors();
+        };
+        
+        console.warn = function(...args) {
+            warnings.push({ type: 'warn', args });
+            originalConsoleWarn.apply(console, args);
+            displayErrors();
+        };
+        
+        console.info = function(...args) {
+            infos.push({ type: 'info', args });
+            originalConsoleInfo.apply(console, args);
+        };
+        
+        function displayErrors() {
+            const errorDisplay = document.getElementById('error-display');
+            let html = '<h2 class="text-xl font-bold mb-2">捕获的错误和警告</h2>';
+            
+            if (errors.length > 0) {
+                html += '<div class="mb-4">';
+                html += '<h3 class="text-lg font-semibold text-danger mb-2">错误 (' + errors.length + ')</h3>';
+                errors.forEach((error, index) => {
+                    html += `<div class="p-2 bg-red-50 border border-red-200 rounded mb-2">
+                        <strong>错误 ${index + 1}:</strong> ${JSON.stringify(error.args.map(arg => arg instanceof Error ? arg.message : arg))}
+                    </div>`;
+                });
+                html += '</div>';
+            }
+            
+            if (warnings.length > 0) {
+                html += '<div class="mb-4">';
+                html += '<h3 class="text-lg font-semibold text-warning mb-2">警告 (' + warnings.length + ')</h3>';
+                warnings.forEach((warning, index) => {
+                    html += `<div class="p-2 bg-yellow-50 border border-yellow-200 rounded mb-2">
+                        <strong>警告 ${index + 1}:</strong> ${JSON.stringify(warning.args.map(arg => arg instanceof Error ? arg.message : arg))}
+                    </div>`;
+                });
+                html += '</div>';
+            }
+            
+            errorDisplay.innerHTML = html;
+        }
+        
+        // 直接引入修复版的updateStatistics函数
+        function loadFixedStatisticsFunction() {
+            console.log('开始加载fixed_update_statistics.js');
+            
+            // 创建script元素直接引入文件
+            const script = document.createElement('script');
+            script.src = 'fixed_update_statistics.js';
+            
+            script.onload = function() {
+                console.log('fixed_update_statistics.js加载成功');
+                // 加载成功后尝试执行updateStatistics函数
+                try {
+                    if (typeof updateStatistics === 'function') {
+                        console.log('updateStatistics函数已加载，可以正常使用');
+                        // 创建必要的DOM元素以避免函数执行时出错
+                        createMockDOMElements();
+                        // 执行函数进行测试
+                        updateStatistics().then(() => {
+                            console.log('updateStatistics函数执行成功');
+                        }).catch(error => {
+                            console.error('updateStatistics函数执行时出错:', error);
+                        });
+                    } else {
+                        console.error('updateStatistics函数未定义');
+                    }
+                } catch (error) {
+                    console.error('测试updateStatistics函数时出错:', error);
+                }
+            };
+            
+            script.onerror = function() {
+                console.error('fixed_update_statistics.js加载失败');
+            };
+            
+            document.body.appendChild(script);
+        }
+        
+        // 创建模拟DOM元素以支持updateStatistics函数执行
+        function createMockDOMElements() {
+            const elementsToCreate = [
+                'total-analysis-count',
+                'current-month',
+                'monthly-max-score',
+                'monthly-max-status',
+                'latest-analysis-date',
+                'latest-analysis-info'
+            ];
+            
+            elementsToCreate.forEach(id => {
+                if (!document.getElementById(id)) {
+                    const element = document.createElement('div');
+                    element.id = id;
+                    document.body.appendChild(element);
+                    console.log('创建模拟DOM元素:', id);
+                }
+            });
+            
+            // 创建模拟的localStorage数据
+            if (!localStorage.getItem('currentUser')) {
+                localStorage.setItem('currentUser', JSON.stringify({ id: 'test-user', username: '测试用户' }));
+                console.log('创建模拟用户数据');
+            }
+        }
+        
+        // 延迟执行以确保DOM完全加载
+        setTimeout(loadFixedStatisticsFunction, 1000);
+    </script>
+</body>
+</html>

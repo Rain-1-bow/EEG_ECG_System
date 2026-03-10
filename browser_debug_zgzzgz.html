@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zgzzgz登录调试工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        input {
+            padding: 8px;
+            width: 200px;
+        }
+        pre {
+            background: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>zgzzgz登录问题调试工具</h1>
+    
+    <div class="test-section">
+        <h2>1. 模拟用户验证测试</h2>
+        <div class="input-group">
+            <label>用户名: <input type="text" id="test-username" value="zgzzgz"></label>
+            <label>密码: <input type="password" id="test-password" value="zgzzgz123"></label>
+        </div>
+        <button onclick="testLogin()">执行验证测试</button>
+        <pre id="test-results">点击按钮开始测试...</pre>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 字符串比较调试</h2>
+        <button onclick="debugStringComparison()">执行字符串比较测试</button>
+        <pre id="string-results">点击按钮开始测试...</pre>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 本地存储检查</h2>
+        <button onclick="checkLocalStorage()">检查本地存储</button>
+        <pre id="storage-results">点击按钮开始测试...</pre>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. 浏览器环境信息</h2>
+        <button onclick="showBrowserInfo()">显示浏览器信息</button>
+        <pre id="browser-results">点击按钮开始测试...</pre>
+    </div>
+
+    <script>
+        // 模拟login.html中的validUsers对象
+        function getValidUsers() {
+            return {
+                'admin': { password: 'admin123', fullname: '管理员', avatar: 'https://picsum.photos/id/1/40/40' },
+                'zgzzgz': { password: 'zgzzgz123', fullname: '张工', avatar: 'https://picsum.photos/id/91/40/40' },
+                'user1': { password: 'user123', fullname: '周光泽', avatar: 'https://picsum.photos/id/91/40/40' },
+                'test': { password: 'test123', fullname: '测试用户', avatar: 'https://picsum.photos/id/64/40/40' }
+            };
+        }
+        
+        // 测试登录验证
+        function testLogin() {
+            const username = document.getElementById('test-username').value;
+            const password = document.getElementById('test-password').value;
+            const results = document.getElementById('test-results');
+            
+            let output = '===== 登录验证测试 =====\n';
+            output += `输入的用户名: "${username}"\n`;
+            output += `输入的密码: "${password}"\n\n`;
+            
+            const validUsers = getValidUsers();
+            output += '有效用户列表: ' + Object.keys(validUsers).join(', ') + '\n';
+            output += `zgzzgz 存在于validUsers: ${
+                Object.prototype.hasOwnProperty.call(validUsers, 'zgzzgz')
+            }\n`;
+            
+            // 详细检查用户对象
+            const user = validUsers[username];
+            output += `获取用户对象: ${JSON.stringify(user)}\n`;
+            
+            if (user) {
+                output += `密码匹配检查: ${user.password === password}\n`;
+                output += `密码详情 - 存储的: "${user.password}", 输入的: "${password}"\n`;
+                output += `密码长度 - 存储的: ${user.password.length}, 输入的: ${password.length}\n`;
+            }
+            
+            // 严格比较测试
+            output += '\n===== 严格比较测试 =====\n';
+            const testUsername = 'zgzzgz';
+            output += `testUsername === username: ${testUsername === username}\n`;
+            
+            // 字符编码检查
+            output += '\n===== 字符编码检查 =====\n';
+            output += `输入用户名编码: ${Array.from(username).map(c => c.charCodeAt(0)).join(', ')}\n`;
+            output += `标准zgzzgz编码: ${Array.from(testUsername).map(c => c.charCodeAt(0)).join(', ')}\n`;
+            
+            // 清理后的比较
+            const cleanedUsername = username.trim();
+            output += '\n===== 清理后比较 =====\n';
+            output += `清理后用户名: "${cleanedUsername}"\n`;
+            output += `清理后比较结果: ${cleanedUsername === testUsername}\n`;
+            
+            results.textContent = output;
+            console.log(output);
+        }
+        
+        // 字符串比较调试
+        function debugStringComparison() {
+            const results = document.getElementById('string-results');
+            const testCases = [
+                { name: '标准zgzzgz', value: 'zgzzgz' },
+                { name: '可能有空格', value: ' zgzzgz ' },
+                { name: '可能有不可见字符', value: 'zgzzgz\u00A0' }, // 非断行空格
+                { name: '可能有零宽字符', value: 'zgzz\u200Bgz' } // 零宽空格
+            ];
+            
+            let output = '===== 字符串比较调试 =====\n';
+            
+            testCases.forEach(test => {
+                output += `\n--- ${test.name} ---\n`;
+                output += `值: "${test.value}"\n`;
+                output += `长度: ${test.value.length}\n`;
+                output += `与标准比较: ${test.value === 'zgzzgz'}\n`;
+                output += `trim后与标准比较: ${test.value.trim() === 'zgzzgz'}\n`;
+                output += `字符编码: ${Array.from(test.value).map(c => c.charCodeAt(0)).join(', ')}\n`;
+                output += `字符详情: ${Array.from(test.value).map((c, i) => `[${i}]: '${c}' (${c.charCodeAt(0)})`).join(', ')}\n`;
+            });
+            
+            results.textContent = output;
+            console.log(output);
+        }
+        
+        // 检查本地存储
+        function checkLocalStorage() {
+            const results = document.getElementById('storage-results');
+            let output = '===== 本地存储检查 =====\n';
+            
+            try {
+                const keys = Object.keys(localStorage);
+                output += `本地存储中的键: ${keys.length > 0 ? keys.join(', ') : '无'}\n\n`;
+                
+                // 检查登录相关的键
+                const loginKeys = ['userLoggedIn', 'currentUser', 'userCredentials', 'authToken', 'rememberedUser'];
+                loginKeys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    output += `${key}: ${value ? '存在' : '不存在'}\n`;
+                    if (value) {
+                        try {
+                            const parsed = JSON.parse(value);
+                            output += `  解析后类型: ${typeof parsed}\n`;
+                        } catch (e) {
+                            output += `  无法解析为JSON\n`;
+                        }
+                    }
+                });
+                
+                output += '\n===== 清除登录状态建议 =====\n';
+                output += '点击下方按钮可清除所有登录相关的本地存储数据，然后重试登录。\n';
+                
+                // 添加清除按钮
+                const clearButton = document.createElement('button');
+                clearButton.textContent = '清除登录状态';
+                clearButton.onclick = () => {
+                    loginKeys.forEach(key => localStorage.removeItem(key));
+                    alert('已清除所有登录相关的本地存储数据！');
+                    checkLocalStorage(); // 重新检查
+                };
+                results.parentNode.appendChild(clearButton);
+                
+            } catch (error) {
+                output += `访问本地存储时出错: ${error.message}\n`;
+            }
+            
+            results.textContent = output;
+            console.log(output);
+        }
+        
+        // 显示浏览器信息
+        function showBrowserInfo() {
+            const results = document.getElementById('browser-results');
+            let output = '===== 浏览器环境信息 =====\n';
+            
+            output += `用户代理: ${navigator.userAgent}\n`;
+            output += `浏览器语言: ${navigator.language}\n`;
+            output += `浏览器平台: ${navigator.platform}\n`;
+            output += `是否启用Cookies: ${navigator.cookieEnabled}\n`;
+            output += `localStorage可用性: ${typeof localStorage !== 'undefined' ? '可用' : '不可用'}\n`;
+            
+            // 检查JavaScript版本和特性
+            output += '\n===== JavaScript环境 =====\n';
+            output += `ES6支持检测: ${typeof Symbol !== 'undefined' && Array.from && String.prototype.includes ? '支持' : '部分支持'}\n`;
+            
+            results.textContent = output;
+            console.log(output);
+        }
+        
+        // 页面加载时自动执行基本测试
+        window.onload = function() {
+            console.log('zgzzgz登录调试工具已加载');
+            console.log('请使用上方的测试功能排查登录问题');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试登录状态</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #2196F3;
+            padding-bottom: 10px;
+        }
+        button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #1976D2;
+        }
+        .test-case {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-case h3 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        #goToUserCenter {
+            background-color: #4CAF50;
+            margin-top: 20px;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+        }
+        #goToUserCenter:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>测试登录状态</h1>
+        <p>使用以下按钮设置不同的登录状态，然后点击下方按钮前往用户中心页面查看效果。</p>
+        
+        <div class="test-case">
+            <h3>测试用例 1: 设置用户凭证</h3>
+            <button id="setUserCredentials">设置 userCredentials</button>
+            <p>设置包含用户名和邮箱的用户凭证信息</p>
+        </div>
+        
+        <div class="test-case">
+            <h3>测试用例 2: 设置当前用户</h3>
+            <button id="setCurrentUser">设置 currentUser</button>
+            <p>设置当前登录用户信息</p>
+        </div>
+        
+        <div class="test-case">
+            <h3>测试用例 3: 设置账号数据</h3>
+            <button id="setAccountsData">设置 accountsData</button>
+            <p>设置账号数据并标记为当前登录</p>
+        </div>
+        
+        <div class="test-case">
+            <h3>测试用例 4: 设置用户注册数据</h3>
+            <button id="setUserRegistration">设置 userRegistration</button>
+            <p>设置用户注册信息</p>
+        </div>
+        
+        <div class="test-case">
+            <h3>测试用例 5: 设置多源数据</h3>
+            <button id="setAllUserData">同时设置所有数据</button>
+            <p>同时在多个位置设置用户数据</p>
+        </div>
+        
+        <button id="clearAll">清除所有登录数据</button>
+        
+        <button id="goToUserCenter">前往用户中心页面</button>
+        
+        <div class="output" id="output"></div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            output.innerHTML += message + '\n';
+            console.log(message);
+        }
+        
+        function setUserCredentials() {
+            const credentials = {
+                username: '测试用户',
+                email: 'test@example.com',
+                id: 'user123',
+                token: 'test-token-123456'
+            };
+            localStorage.setItem('userCredentials', JSON.stringify(credentials));
+            log('✓ 已设置 userCredentials: ' + credentials.username);
+        }
+        
+        function setCurrentUser() {
+            const currentUser = {
+                name: '张三',
+                email: 'zhangsan@example.com',
+                userId: 'user456',
+                loginTime: new Date().toISOString()
+            };
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            log('✓ 已设置 currentUser: ' + currentUser.name);
+        }
+        
+        function setAccountsData() {
+            const accounts = [
+                {
+                    id: 'acc789',
+                    username: '李四',
+                    email: 'lisi@example.com',
+                    role: 'user',
+                    isLoggedIn: true,
+                    currentLogin: true
+                }
+            ];
+            localStorage.setItem('accountsData', JSON.stringify(accounts));
+            log('✓ 已设置 accountsData: ' + accounts[0].username + ' (已标记为当前登录)');
+        }
+        
+        function setUserRegistration() {
+            const registration = {
+                username: '王五',
+                email: 'wangwu@example.com',
+                registrationDate: '2023-01-01',
+                id: 'reg123'
+            };
+            localStorage.setItem('userRegistration', JSON.stringify(registration));
+            log('✓ 已设置 userRegistration: ' + registration.username);
+        }
+        
+        function setAllUserData() {
+            setUserCredentials();
+            // 设置不同的用户名为了测试优先级
+            const currentUser = {
+                name: '全部数据测试用户',
+                email: 'alltest@example.com',
+                userId: 'all123'
+            };
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            setAccountsData();
+            setUserRegistration();
+            
+            // 设置最后登录信息
+            const lastLogin = {
+                username: '最终测试用户',
+                email: 'finaltest@example.com',
+                timestamp: Date.now()
+            };
+            localStorage.setItem('lastLogin', JSON.stringify(lastLogin));
+            log('✓ 已设置所有用户数据，包括 lastLogin');
+        }
+        
+        function clearAll() {
+            const keysToRemove = ['userCredentials', 'currentUser', 'accountsData', 
+                                 'userRegistration', 'lastLogin', 'lastDisplayedUserInfo'];
+            
+            keysToRemove.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    log('✓ 已清除: ' + key);
+                }
+            });
+            
+            log('✓ 已清除所有测试数据');
+        }
+        
+        document.getElementById('setUserCredentials').addEventListener('click', setUserCredentials);
+        document.getElementById('setCurrentUser').addEventListener('click', setCurrentUser);
+        document.getElementById('setAccountsData').addEventListener('click', setAccountsData);
+        document.getElementById('setUserRegistration').addEventListener('click', setUserRegistration);
+        document.getElementById('setAllUserData').addEventListener('click', setAllUserData);
+        document.getElementById('clearAll').addEventListener('click', clearAll);
+        
+        document.getElementById('goToUserCenter').addEventListener('click', function() {
+            window.location.href = 'user_center.html';
+        });
+        
+        // 初始显示当前localStorage状态
+        log('=== 当前localStorage状态 ===');
+        const userKeys = ['userCredentials', 'currentUser', 'accountsData', 
+                         'userRegistration', 'lastLogin', 'lastDisplayedUserInfo'];
+        
+        userKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value) {
+                try {
+                    const parsed = JSON.parse(value);
+                    log(`${key}: 存在，包含 ${Object.keys(parsed).join(', ')}`);
+                } catch {
+                    log(`${key}: 存在，但不是有效的JSON`);
+                }
+            } else {
+                log(`${key}: 不存在`);
+            }
+        });
+    </script>
+</body>
+</html>

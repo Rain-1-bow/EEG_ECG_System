@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直接错误查找器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        #error-container {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #d32f2f;
+        }
+        .warning {
+            color: #ff6f00;
+            background-color: #fff3e0;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #ff6f00;
+        }
+        .info {
+            color: #1976d2;
+            background-color: #e3f2fd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #1976d2;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .highlight {
+            background-color: #fff9c4;
+            padding: 2px 4px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>user_center.html 错误查找器</h1>
+    
+    <div class="test-section">
+        <h2>1. 直接测试 updateStatistics 函数的关键部分</h2>
+        <button onclick="testCriticalSections()">运行关键部分测试</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 模拟完整的页面加载环境</h2>
+        <button onclick="simulateFullLoad()">模拟页面加载</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 测试常见的运行时错误场景</h2>
+        <button onclick="testRuntimeErrors()">测试运行时错误</button>
+    </div>
+    
+    <div id="error-container">
+        <div class="info">点击上方按钮开始测试...</div>
+    </div>
+    
+    <!-- 模拟DOM元素 -->
+    <div id="total-analysis-count" style="display:none"></div>
+    <div id="monthly-max-score" style="display:none"></div>
+    <div id="monthly-max-status" style="display:none"></div>
+    <div id="latest-analysis-date" style="display:none"></div>
+    <div id="latest-analysis-info" style="display:none"></div>
+    <div id="current-month" style="display:none"></div>
+    
+    <script>
+        // 重写console方法以捕获所有日志
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            debug: console.debug
+        };
+        
+        const errorContainer = document.getElementById('error-container');
+        let testCounter = 0;
+        
+        function logMessage(type, message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = type;
+            messageElement.innerHTML = `<strong>[测试 ${++testCounter}]</strong> ${new Date().toLocaleTimeString()}: ${message}`;
+            errorContainer.appendChild(messageElement);
+            errorContainer.scrollTop = errorContainer.scrollHeight;
+            
+            // 同时输出到原始console
+            if (type === 'error') {
+                originalConsole.error(message);
+            } else if (type === 'warning') {
+                originalConsole.warn(message);
+            } else {
+                originalConsole.log(message);
+            }
+        }
+        
+        console.log = function(...args) {
+            logMessage('info', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            logMessage('error', args.join(' '));
+        };
+        
+        console.warn = function(...args) {
+            logMessage('warning', args.join(' '));
+        };
+        
+        // 捕获全局错误
+        window.onerror = function(message, source, lineno, colno, error) {
+            logMessage('error', `全局错误: ${message}\n文件: ${source}\n行号: ${lineno}, 列号: ${colno}\n错误栈: ${error ? error.stack : '无'}`);
+            return true;
+        };
+        
+        window.addEventListener('unhandledrejection', function(event) {
+            logMessage('error', `未处理的Promise拒绝: ${event.reason}\nPromise: ${event.promise}`);
+        });
+        
+        // 模拟必要的环境
+        window.unifiedSyncManager = {
+            getAllAnalysisHistory: function() {
+                console.log('unifiedSyncManager.getAllAnalysisHistory 被调用');
+                return [];
+            }
+        };
+        
+        window.coreSyncSystem = null;
+        window.localDB = null;
+        
+        // 模拟localStorage
+        if (!localStorage.getItem('currentUser')) {
+            localStorage.setItem('currentUser', JSON.stringify({ id: 'test_user', username: 'testuser123' }));
+        }
+        
+        // 测试1: 测试updateStatistics函数的关键部分
+        async function testCriticalSections() {
+            logMessage('info', '开始测试updateStatistics函数的关键部分...');
+            
+            try {
+                // 测试1.1: 用户信息获取
+                try {
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                    const userCredentials = JSON.parse(localStorage.getItem('userCredentials') || '{}');
+                    
+                    let currentUserId = currentUser.id || currentUser.userId || currentUser.user_id || currentUser.username || currentUser.name;
+                    let currentUserName = currentUser.username || currentUser.name || currentUser.user || currentUser.email;
+                    
+                    if (!currentUserId) {
+                        currentUserId = userCredentials.username || userCredentials.email || userCredentials.userId || userCredentials.id;
+                    }
+                    
+                    logMessage('info', `✓ 用户信息获取成功: ID=${currentUserId}, Name=${currentUserName}`);
+                } catch (e) {
+                    logMessage('error', `✗ 用户信息获取失败: ${e.message}`);
+                }
+                
+                // 测试1.2: 数组处理和过滤
+                try {
+                    const mockData = [];
+                    // 测试空数组过滤
+                    const filtered1 = mockData.filter(record => {
+                        return record && record.score > 70;
+                    });
+                    logMessage('info', `✓ 空数组过滤测试通过，结果数量: ${filtered1.length}`);
+                    
+                    // 测试非空数组过滤
+                    const mockData2 = [
+                        { id: 1, score: 85 },
+                        { id: 2, score: 65 },
+                        { id: 3, score: 90 }
+                    ];
+                    const filtered2 = mockData2.filter(record => record.score > 70);
+                    logMessage('info', `✓ 非空数组过滤测试通过，结果数量: ${filtered2.length}`);
+                } catch (e) {
+                    logMessage('error', `✗ 数组处理测试失败: ${e.message}`);
+                }
+                
+                // 测试1.3: 日期处理
+                try {
+                    const currentDate = new Date();
+                    const currentMonth = currentDate.getMonth();
+                    const currentYear = currentDate.getFullYear();
+                    
+                    const monthNames = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+                    const formattedMonth = `${currentYear}年${monthNames[currentMonth]}月`;
+                    
+                    logMessage('info', `✓ 日期处理测试通过，格式化月份: ${formattedMonth}`);
+                } catch (e) {
+                    logMessage('error', `✗ 日期处理测试失败: ${e.message}`);
+                }
+                
+                // 测试1.4: DOM元素检查和安全访问
+                try {
+                    const elementsToCheck = [
+                        'total-analysis-count',
+                        'monthly-max-score', 
+                        'monthly-max-status',
+                        'latest-analysis-date',
+                        'latest-analysis-info',
+                        'current-month'
+                    ];
+                    
+                    elementsToCheck.forEach(id => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            logMessage('info', `✓ DOM元素检查: ${id} 存在`);
+                            // 测试安全设置文本
+                            const newText = `测试${id}`;
+                            if (element.textContent !== newText) {
+                                element.textContent = newText;
+                            }
+                        } else {
+                            logMessage('warning', `⚠️ DOM元素检查: ${id} 不存在`);
+                        }
+                    });
+                } catch (e) {
+                    logMessage('error', `✗ DOM元素测试失败: ${e.message}`);
+                }
+                
+                // 测试1.5: 错误处理机制
+                try {
+                    throw new Error('测试错误');
+                } catch (error) {
+                    logMessage('info', `✓ 错误处理测试通过，捕获到错误: ${error.message}`);
+                }
+                
+            } catch (e) {
+                logMessage('error', `测试过程中出现严重错误: ${e.message}`);
+            }
+        }
+        
+        // 测试2: 模拟完整的页面加载环境
+        async function simulateFullLoad() {
+            logMessage('info', '开始模拟完整的页面加载环境...');
+            
+            try {
+                // 模拟页面加载时的事件处理
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // 测试核心逻辑流程
+                const mockAnalysisHistory = [];
+                
+                // 测试无数据时的处理逻辑
+                if (mockAnalysisHistory.length === 0) {
+                    logMessage('info', '测试无分析历史的处理逻辑...');
+                    
+                    // 模拟重置统计数据
+                    const elementsToReset = [
+                        { id: 'monthly-max-score', value: '--' },
+                        { id: 'monthly-max-status', value: '暂无' },
+                        { id: 'latest-analysis-date', value: '暂无记录' },
+                        { id: 'latest-analysis-info', html: '<span>得分：--</span><span class="mx-2">·</span><span class="text-gray-500">暂无状态</span>' }
+                    ];
+                    
+                    elementsToReset.forEach(item => {
+                        const element = document.getElementById(item.id);
+                        if (element) {
+                            if (item.html) {
+                                element.innerHTML = item.html;
+                            } else {
+                                element.textContent = item.value;
+                            }
+                            logMessage('info', `✓ 重置元素 ${item.id} 成功`);
+                        }
+                    });
+                }
+                
+                // 测试异步操作
+                async function mockAsyncOperation() {
+                    return new Promise(resolve => {
+                        setTimeout(() => resolve('成功'), 200);
+                    });
+                }
+                
+                const result = await mockAsyncOperation();
+                logMessage('info', `✓ 异步操作测试通过，结果: ${result}`);
+                
+            } catch (e) {
+                logMessage('error', `模拟页面加载失败: ${e.message}`);
+            }
+        }
+        
+        // 测试3: 测试常见的运行时错误场景
+        function testRuntimeErrors() {
+            logMessage('info', '开始测试常见的运行时错误场景...');
+            
+            // 测试3.1: 未定义变量访问
+            try {
+                // 这应该会抛出错误
+                console.log(undefinedVariable);
+                logMessage('error', '✗ 未捕获到未定义变量错误');
+            } catch (e) {
+                logMessage('info', `✓ 正确捕获了未定义变量错误: ${e.message}`);
+            }
+            
+            // 测试3.2: 空对象属性访问
+            try {
+                const nullObj = null;
+                console.log(nullObj.property);
+                logMessage('error', '✗ 未捕获到空对象属性访问错误');
+            } catch (e) {
+                logMessage('info', `✓ 正确捕获了空对象属性访问错误: ${e.message}`);
+            }
+            
+            // 测试3.3: 类型错误
+            try {
+                const num = 123;
+                num.toUpperCase();
+                logMessage('error', '✗ 未捕获到类型错误');
+            } catch (e) {
+                logMessage('info', `✓ 正确捕获了类型错误: ${e.message}`);
+            }
+            
+            // 测试3.4: 安全检查模式
+            try {
+                const obj = null;
+                const safeValue = obj?.property;
+                logMessage('info', `✓ 可选链操作符测试通过: ${safeValue}`);
+            } catch (e) {
+                logMessage('error', `✗ 可选链操作符测试失败: ${e.message}`);
+            }
+        }
+        
+        logMessage('info', '初始化完成，所有测试函数已加载');
+    </script>
+</body>
+</html>

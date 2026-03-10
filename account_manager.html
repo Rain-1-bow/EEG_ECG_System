@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账号管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background-color: #1890ff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-item label {
+            font-weight: 500;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .filter-item select,
+        .filter-item input {
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .filter-item select:focus,
+        .filter-item input:focus {
+            outline: none;
+            border-color: #40a9ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+        
+        .refresh-btn {
+            padding: 8px 16px;
+            background-color: #52c41a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: auto;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #40a9ff;
+        }
+        
+        .view-all-btn {
+            padding: 8px 16px;
+            background-color: #52c41a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+        
+        .view-all-btn:hover {
+            background-color: #73d13d;
+        }
+        
+        .accounts-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .accounts-table th,
+        .accounts-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .accounts-table th {
+            background-color: #fafafa;
+            font-weight: 600;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .accounts-table tr:hover {
+            background-color: #fafafa;
+        }
+        
+        .account-row {
+            transition: background-color 0.3s;
+        }
+        
+        .account-row.admin {
+            background-color: #e6f7ff;
+        }
+        
+        .account-row.user {
+            background-color: #f6ffed;
+        }
+        
+        .account-row.test {
+            background-color: #fff7e6;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-badge.active {
+            background-color: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        
+        .status-badge.inactive {
+            background-color: #fff2e8;
+            color: #fa8c16;
+            border: 1px solid #ffd591;
+        }
+        
+        .details-btn {
+            padding: 6px 12px;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .details-btn:hover {
+            background-color: #40a9ff;
+        }
+        
+        .delete-btn {
+            padding: 6px 12px;
+            background-color: #ff4d4f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: 8px;
+        }
+        
+        .delete-btn:hover {
+            background-color: #ff7875;
+        }
+        
+        .delete-btn:disabled {
+            background-color: #d9d9d9;
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        
+        .pagination button {
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            background-color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .pagination button:hover {
+            border-color: #40a9ff;
+            color: #40a9ff;
+        }
+        
+        .pagination button.active {
+            background-color: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .footer {
+            background-color: #fafafa;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .account-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .detail-section {
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            padding: 16px;
+        }
+        
+        .detail-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+        
+        .detail-item {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+            color: #666;
+            margin-right: 8px;
+        }
+        
+        .detail-value {
+            color: #333;
+        }
+        
+        .history-section {
+            margin-top: 20px;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .history-table th,
+        .history-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+        
+        .history-table th {
+            background-color: #fafafa;
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #f0f0f0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .back-link:hover {
+            background-color: #e8e8e8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>账号管理系统 - 账号信息检测</h1>
+        </div>
+        
+        <div class="content">
+            <div class="filters">
+                <div class="filter-item">
+                    <label for="role-filter">角色筛选:</label>
+                    <select id="role-filter">
+                        <option value="all">全部角色</option>
+                        <option value="admin">管理员</option>
+                        <option value="user">普通用户</option>
+                        <option value="test">测试用户</option>
+                    </select>
+                </div>
+                
+                <div class="filter-item">
+                    <label for="status-filter">状态筛选:</label>
+                    <select id="status-filter">
+                        <option value="all">全部状态</option>
+                        <option value="active">活跃</option>
+                        <option value="inactive">非活跃</option>
+                    </select>
+                </div>
+                
+                <div class="filter-item">
+                    <label for="search">搜索账号:</label>
+                    <input type="text" id="search" placeholder="输入用户名或邮箱...">
+                </div>
+                
+                <button class="refresh-btn" id="refresh-btn">刷新数据</button>
+                <button class="view-all-btn" id="view-all-btn">查看所有账号</button>
+            </div>
+            
+            <table class="accounts-table" id="accounts-table">
+                <thead>
+                    <tr>
+                        <th>用户名</th>
+                        <th>邮箱</th>
+                        <th>密码</th>
+                        <th>角色</th>
+                        <th>状态</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="accounts-table-body">
+                    <!-- 账号数据将通过JavaScript动态生成 -->
+                    <tr>
+                        <td colspan="7" class="no-data">加载中，请稍候...</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="pagination" id="pagination">
+                <!-- 分页控件将通过JavaScript动态生成 -->
+            </div>
+            
+            <a href="index.html" class="back-link">返回首页</a>
+        </div>
+        
+        <div class="footer">
+            <p>账号管理系统 - 版权所有 © 2023</p>
+        </div>
+    </div>
+    
+    <!-- 账号详情模态框 -->
+    <div class="modal" id="account-details-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>账号详细信息</h2>
+                <button class="modal-close" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- 账号详情将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 账号数据数组
+        let accountsData = [];
+        
+        // 获取最新的账号数据，同时从多个可能的数据源同步
+        function syncAccountsData() {
+            try {
+                console.log('[AccountManager] 开始同步账号数据...');
+                
+                // 1. 优先使用unifiedSyncManager获取账号数据（如果可用）
+                let unifiedAccounts = [];
+                if (window.unifiedSyncManager) {
+                    try {
+                        console.log('[AccountManager] 尝试从unifiedSyncManager获取账号数据');
+                        // 可以通过自定义方法或直接访问存储获取账号数据
+                        const accountsData = window.unifiedSyncManager.secureStorage?.getItem('accountsData');
+                        if (Array.isArray(accountsData)) {
+                            unifiedAccounts = accountsData;
+                            console.log('[AccountManager] 从unifiedSyncManager获取到', unifiedAccounts.length, '个账号');
+                        }
+                    } catch (unifiedError) {
+                        console.error('[AccountManager] 从unifiedSyncManager获取账号数据失败:', unifiedError);
+                    }
+                }
+                
+                // 2. 从localStorage获取基础数据
+                let localStorageAccounts = [];
+                try {
+                    const storedData = localStorage.getItem('accountsData');
+                    if (storedData) {
+                        localStorageAccounts = JSON.parse(storedData);
+                        console.log('[AccountManager] 从localStorage获取到', localStorageAccounts.length, '个账号');
+                    }
+                } catch (error) {
+                    console.error('[AccountManager] 读取localStorage账号数据失败:', error);
+                }
+                
+                // 3. 尝试从其他可能的注册数据源获取新账号
+                // 检查是否有单独的用户注册表或注册数据
+                const registeredUsers = [];
+                
+                try {
+                    // 检查userRegistration或userList数据
+                    const userRegistrationData = localStorage.getItem('userRegistration');
+                    const userListData = localStorage.getItem('userList');
+                    
+                    if (userRegistrationData) {
+                        const registrations = JSON.parse(userRegistrationData);
+                        if (Array.isArray(registrations)) {
+                            registrations.forEach(reg => {
+                                if (reg.username && !registeredUsers.find(u => u.username === reg.username)) {
+                                    registeredUsers.push({
+                                        id: Date.now() + Math.floor(Math.random() * 1000), // 生成临时ID
+                                        username: reg.username,
+                                        email: reg.email || `${reg.username}@example.com`,
+                                        fullname: reg.fullname || reg.username,
+                                        role: 'user', // 默认为普通用户
+                                        status: 'active',
+                                        created_at: reg.created_at || new Date().toLocaleString('zh-CN'),
+                                        last_login: '-',
+                                        password_changed: reg.created_at || new Date().toLocaleString('zh-CN'),
+                                        login_count: 0,
+                                        failed_attempts: 0,
+                                        ip_addresses: [],
+                                        profile_updated: reg.created_at || new Date().toLocaleString('zh-CN'),
+                                        history: [{
+                                            time: reg.created_at || new Date().toLocaleString('zh-CN'),
+                                            action: '账号注册',
+                                            ip: reg.ip || '-'  
+                                        }],
+                                        analysis_history: []
+                                    });
+                                }
+                            });
+                        }
+                    }
+                    
+                    if (userListData) {
+                        const userList = JSON.parse(userListData);
+                        if (Array.isArray(userList)) {
+                            userList.forEach(user => {
+                                if (user.username && !registeredUsers.find(u => u.username === user.username)) {
+                                    registeredUsers.push({
+                                        id: Date.now() + Math.floor(Math.random() * 1000),
+                                        username: user.username,
+                                        email: user.email || `${user.username}@example.com`,
+                                        fullname: user.fullname || user.username,
+                                        role: user.role || 'user',
+                                        status: user.status || 'active',
+                                        created_at: user.created_at || new Date().toLocaleString('zh-CN'),
+                                        last_login: user.last_login || '-',
+                                        password_changed: user.password_changed || new Date().toLocaleString('zh-CN'),
+                                        login_count: user.login_count || 0,
+                                        failed_attempts: user.failed_attempts || 0,
+                                        ip_addresses: user.ip_addresses || [],
+                                        profile_updated: user.profile_updated || new Date().toLocaleString('zh-CN'),
+                                        history: user.history || [],
+                                        analysis_history: []
+                                    });
+                                }
+                            });
+                        }
+                    }
+                } catch (registrationError) {
+                    console.error('[AccountManager] 读取注册数据失败:', registrationError);
+                }
+                
+                console.log('[AccountManager] 从注册数据源获取到', registeredUsers.length, '个账号');
+                
+                // 合并账号数据，避免重复
+                // 创建一个包含所有现有用户名的集合
+                const existingUsernames = new Set();
+                // 首先合并unifiedSyncManager中的账号（优先）
+                let allAccounts = unifiedAccounts.map(account => {
+                    existingUsernames.add(account.username);
+                    return account;
+                });
+                
+                // 然后处理localStorage中的账号（补充）
+                localStorageAccounts.forEach(account => {
+                    if (!existingUsernames.has(account.username)) {
+                        allAccounts.push(account);
+                        existingUsernames.add(account.username);
+                        console.log('[AccountManager] 合并localStorage账号:', account.username);
+                    } else {
+                        // 如果用户名已存在，更新现有账号的信息
+                        const existingIndex = allAccounts.findIndex(acc => acc.username === account.username);
+                        if (existingIndex > -1) {
+                            // 智能合并账号信息，保留更新的字段
+                            const existingAccount = allAccounts[existingIndex];
+                            allAccounts[existingIndex] = {
+                                ...existingAccount,
+                                ...account,
+                                // 保留原有的ID，避免混淆
+                                id: existingAccount.id
+                            };
+                            console.log('[AccountManager] 更新账号信息:', account.username);
+                        }
+                    }
+                });
+                
+                // 然后添加注册数据源中的新账号
+                registeredUsers.forEach(newUser => {
+                    if (!existingUsernames.has(newUser.username)) {
+                        allAccounts.push(newUser);
+                        existingUsernames.add(newUser.username);
+                        console.log('[AccountManager] 合并新账号:', newUser.username);
+                    } else {
+                        // 如果用户名已存在，更新现有账号的信息
+                        const existingIndex = allAccounts.findIndex(acc => acc.username === newUser.username);
+                        if (existingIndex > -1) {
+                            const existingAccount = allAccounts[existingIndex];
+                            allAccounts[existingIndex] = {
+                                ...existingAccount,
+                                ...newUser,
+                                id: existingAccount.id
+                            };
+                            console.log('[AccountManager] 更新账号信息:', newUser.username);
+                        }
+                    }
+                });
+                
+                // 3. 如果合并后的数据为空，使用默认数据
+                if (allAccounts.length === 0) {
+                    console.log('[AccountManager] 未找到账号数据，使用默认数据');
+                    allAccounts = [
+                        {
+                            id: 1,
+                            username: 'admin',
+                            email: 'admin@example.com',
+                            fullname: '系统管理员',
+                            role: 'admin',
+                            status: 'active',
+                            created_at: '2023-01-01 00:00:00',
+                            last_login: '2023-12-01 14:30:00',
+                            password_changed: '2023-01-01 00:00:00',
+                            login_count: 156,
+                            failed_attempts: 3,
+                            ip_addresses: ['192.168.1.1', '127.0.0.1'],
+                            profile_updated: '2023-11-15 09:45:00',
+                            history: [
+                                { time: '2023-12-01 14:30:00', action: '登录系统', ip: '192.168.1.1' },
+                                { time: '2023-11-15 09:45:00', action: '更新个人资料', ip: '192.168.1.1' },
+                                { time: '2023-11-10 16:20:00', action: '修改密码', ip: '192.168.1.2' }
+                            ],
+                            analysis_history: []
+                        },
+                        {
+                            id: 2,
+                            username: 'user1',
+                            email: 'user1@example.com',
+                            fullname: '测试用户1',
+                            role: 'user',
+                            status: 'active',
+                            created_at: '2023-01-02 10:15:00',
+                            last_login: '2023-11-28 11:20:00',
+                            password_changed: '2023-10-05 15:30:00',
+                            login_count: 89,
+                            failed_attempts: 1,
+                            ip_addresses: ['192.168.1.3'],
+                            profile_updated: '2023-10-05 15:30:00',
+                            history: [
+                                { time: '2023-11-28 11:20:00', action: '登录系统', ip: '192.168.1.3' },
+                                { time: '2023-10-05 15:30:00', action: '修改密码', ip: '192.168.1.3' },
+                                { time: '2023-09-20 09:15:00', action: '登录系统', ip: '192.168.1.3' }
+                            ],
+                            analysis_history: []
+                        },
+                        {
+                            id: 3,
+                            username: 'test',
+                            email: 'test@example.com',
+                            fullname: '测试用户2',
+                            role: 'test',
+                            status: 'active',
+                            created_at: '2023-01-03 14:20:00',
+                            last_login: '2023-11-25 16:45:00',
+                            password_changed: '2023-01-03 14:20:00',
+                            login_count: 45,
+                            failed_attempts: 0,
+                            ip_addresses: ['192.168.1.4'],
+                            profile_updated: '2023-01-03 14:20:00',
+                            history: [
+                                { time: '2023-11-25 16:45:00', action: '登录系统', ip: '192.168.1.4' },
+                                { time: '2023-11-20 10:30:00', action: '登录系统', ip: '192.168.1.4' },
+                                { time: '2023-11-15 13:15:00', action: '登录系统', ip: '192.168.1.4' }
+                            ],
+                            analysis_history: []
+                        },
+                        {
+                            id: 4,
+                            username: '123456',
+                            email: '123456@example.com',
+                            fullname: '用户123456',
+                            role: 'user',
+                            status: 'active',
+                            created_at: '2023-05-10 09:30:00',
+                            last_login: '2023-11-30 14:20:00',
+                            password_changed: '2023-08-15 16:40:00',
+                            login_count: 23,
+                            failed_attempts: 2,
+                            ip_addresses: ['192.168.1.5', '192.168.1.6'],
+                            profile_updated: '2023-08-15 16:40:00',
+                            history: [
+                                { time: '2023-11-30 14:20:00', action: '登录系统', ip: '192.168.1.5' },
+                                { time: '2023-08-15 16:40:00', action: '修改密码', ip: '192.168.1.6' },
+                                { time: '2023-07-20 11:15:00', action: '登录系统', ip: '192.168.1.5' }
+                            ],
+                            analysis_history: []
+                        },
+                        {
+                            id: 5,
+                            username: 'zgzzgz',
+                            email: 'zgzzgz@example.com',
+                            fullname: '用户zgzzgz',
+                            role: 'user',
+                            status: 'active',
+                            created_at: '2023-06-15 11:45:00',
+                            last_login: '2023-12-01 10:15:00',
+                            password_changed: '2023-09-10 09:20:00',
+                            login_count: 37,
+                            failed_attempts: 1,
+                            ip_addresses: ['192.168.1.7'],
+                            profile_updated: '2023-09-10 09:20:00',
+                            history: [
+                                { time: '2023-12-01 10:15:00', action: '登录系统', ip: '192.168.1.7' },
+                                { time: '2023-09-10 09:20:00', action: '修改密码', ip: '192.168.1.7' },
+                                { time: '2023-08-05 15:30:00', action: '登录系统', ip: '192.168.1.7' }
+                            ],
+                            analysis_history: []
+                        }
+                    ];
+                }
+                
+                // 确保每个账号有唯一ID
+                const idMap = new Set();
+                allAccounts.forEach((account, index) => {
+                    // 如果没有ID或ID重复，生成新ID
+                    if (!account.id || idMap.has(account.id)) {
+                        let newId;
+                        do {
+                            newId = Date.now() + index + Math.floor(Math.random() * 1000);
+                        } while (idMap.has(newId));
+                        account.id = newId;
+                    }
+                    idMap.add(account.id);
+                });
+                
+                // 优先使用unifiedSyncManager保存数据（如果可用）
+                try {
+                    if (window.unifiedSyncManager?.secureStorage?.setItem) {
+                        console.log('[AccountManager] 使用unifiedSyncManager保存账号数据');
+                        window.unifiedSyncManager.secureStorage.setItem('accountsData', allAccounts);
+                    } else {
+                        // 后备方案：直接保存到localStorage
+                        console.log('[AccountManager] 直接保存账号数据到localStorage');
+                        localStorage.setItem('accountsData', JSON.stringify(allAccounts));
+                    }
+                } catch (saveError) {
+                    console.error('[AccountManager] 保存账号数据失败:', saveError);
+                    // 尝试后备保存
+                    try {
+                        localStorage.setItem('accountsData', JSON.stringify(allAccounts));
+                    } catch (fallbackSaveError) {
+                        console.error('[AccountManager] 后备保存也失败:', fallbackSaveError);
+                    }
+                }
+                
+                console.log('[AccountManager] 同步完成，总账号数:', allAccounts.length);
+                return allAccounts;
+            } catch (syncError) {
+                console.error('[AccountManager] 同步账号数据失败:', syncError);
+                
+                // 构建多级回退策略
+                let fallbackData = [];
+                
+                // 1. 尝试从unifiedSyncManager获取回退数据
+                if (window.unifiedSyncManager?.secureStorage?.getItem) {
+                    try {
+                        const unifiedData = window.unifiedSyncManager.secureStorage.getItem('accountsData');
+                        if (Array.isArray(unifiedData)) {
+                            fallbackData = unifiedData;
+                            console.log('[AccountManager] 从unifiedSyncManager获取回退数据，数量:', fallbackData.length);
+                        }
+                    } catch (e) {
+                        console.error('[AccountManager] 从unifiedSyncManager获取回退数据失败:', e);
+                    }
+                }
+                
+                // 2. 如果unifiedSyncManager没有数据，尝试从localStorage获取
+                if (fallbackData.length === 0) {
+                    try {
+                        const storedData = localStorage.getItem('accountsData');
+                        if (storedData) {
+                            fallbackData = JSON.parse(storedData);
+                            console.log('[AccountManager] 从localStorage获取回退数据，数量:', fallbackData.length);
+                        }
+                    } catch (e) {
+                        console.error('[AccountManager] 从localStorage获取回退数据失败:', e);
+                    }
+                }
+                
+                // 3. 如果还是没有数据，返回默认数据（包含admin和zgzzgz账号）
+                if (fallbackData.length === 0) {
+                    console.log('[AccountManager] 回退到默认账号数据');
+                    fallbackData = [
+                        {
+                            id: 1,
+                            username: 'admin',
+                            email: 'admin@example.com',
+                            fullname: '系统管理员',
+                            role: 'admin',
+                            status: 'active',
+                            created_at: '2023-01-01 00:00:00',
+                            last_login: '2023-12-01 14:30:00',
+                            password_changed: '2023-09-15 09:45:00',
+                            login_count: 127,
+                            failed_attempts: 3,
+                            ip_addresses: ['192.168.1.1', '127.0.0.1'],
+                            profile_updated: '2023-09-15 09:45:00',
+                            history: [
+                                { time: '2023-12-01 14:30:00', action: '登录系统', ip: '192.168.1.1' },
+                                { time: '2023-09-15 09:45:00', action: '修改密码', ip: '192.168.1.1' }
+                            ],
+                            analysis_history: []
+                        },
+                        {
+                            id: 2,
+                            username: 'zgzzgz',
+                            email: 'zgzzgz@example.com',
+                            fullname: '用户zgzzgz',
+                            role: 'user',
+                            status: 'active',
+                            created_at: '2023-06-15 11:45:00',
+                            last_login: '2023-12-01 10:15:00',
+                            password_changed: '2023-09-10 09:20:00',
+                            login_count: 37,
+                            failed_attempts: 1,
+                            ip_addresses: ['192.168.1.7'],
+                            profile_updated: '2023-09-10 09:20:00',
+                            history: [
+                                { time: '2023-12-01 10:15:00', action: '登录系统', ip: '192.168.1.7' },
+                                { time: '2023-09-10 09:20:00', action: '修改密码', ip: '192.168.1.7' }
+                            ],
+                            analysis_history: []
+                        }
+                    ];
+                }
+                
+                return fallbackData;
+            }
+        }
+        
+        // 简单直接的函数来更新用户名显示
+        function updateUsernameDisplay() {
+            try {
+                // 尝试从多个可能的localStorage键获取用户信息
+                const possibleKeys = ['userCredentials', 'currentUser', 'core_user_profile', 'userProfileData'];
+                let username = '用户'; // 默认用户名
+                
+                for (const key of possibleKeys) {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        try {
+                            const userData = JSON.parse(data);
+                            // 尝试从不同的字段中获取用户名
+                            if (userData.username) {
+                                username = userData.username;
+                                break;
+                            } else if (userData.name) {
+                                username = userData.name;
+                                break;
+                            } else if (userData.fullname) {
+                                username = userData.fullname;
+                                break;
+                            }
+                        } catch (parseError) {
+                            // 解析失败，继续尝试下一个键
+                        }
+                    }
+                }
+                
+                // 更新桌面端和移动端的用户名显示
+                const desktopName = document.getElementById('nav-username-desktop');
+                const mobileName = document.getElementById('nav-username-mobile');
+                
+                if (desktopName) {
+                    desktopName.textContent = username;
+                }
+                if (mobileName) {
+                    mobileName.textContent = username;
+                }
+            } catch (error) {
+                console.error('更新用户名显示失败:', error);
+            }
+        }
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 首先立即更新用户名显示
+            updateUsernameDisplay();
+            
+            // 同步并加载账号数据
+            accountsData = syncAccountsData();
+            console.log('[AccountManager] 最终账号数据数量:', accountsData.length);
+            // 保存合并后的数据回localStorage
+            localStorage.setItem('accountsData', JSON.stringify(accountsData));
+            
+            // 加载账号列表
+            loadAccounts();
+            
+            // 绑定刷新按钮事件
+            document.getElementById('refresh-btn').addEventListener('click', function() {
+                console.log('[AccountManager] 刷新账号数据...');
+                // 强制重新同步数据，确保获取最新的分析历史
+                accountsData = syncAccountsData();
+                localStorage.setItem('accountsData', JSON.stringify(accountsData));
+                loadAccounts();
+                alert('账号数据已刷新！');
+            });
+            
+            // 监听分析历史更新事件（与user_center.html保持一致）
+            window.addEventListener('analysisHistoryUpdated', function() {
+                console.log('[AccountManager] 接收到分析历史更新事件，刷新账号数据...');
+                // 重新同步数据以获取最新的分析历史
+                accountsData = syncAccountsData();
+                localStorage.setItem('accountsData', JSON.stringify(accountsData));
+                loadAccounts();
+            });
+            
+            // 绑定查看所有账号按钮事件
+            document.getElementById('view-all-btn').addEventListener('click', function() {
+                // 重置所有筛选条件
+                document.getElementById('role-filter').value = 'all';
+                document.getElementById('status-filter').value = 'all';
+                document.getElementById('search').value = '';
+                
+                console.log('[AccountManager] 查看所有账号');
+                loadAccounts();
+                
+                // 显示提示消息
+                alert('已显示所有账号！');
+            });
+            
+            // 绑定筛选事件
+            document.getElementById('role-filter').addEventListener('change', loadAccounts);
+            document.getElementById('status-filter').addEventListener('change', loadAccounts);
+            document.getElementById('search').addEventListener('input', loadAccounts);
+            
+            // 绑定模态框关闭事件
+            document.getElementById('close-modal').addEventListener('click', function() {
+                document.getElementById('account-details-modal').style.display = 'none';
+            });
+            
+            // 点击模态框外部关闭模态框
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('account-details-modal');
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+        
+        // 加载账号列表
+        function loadAccounts() {
+            const roleFilter = document.getElementById('role-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            
+            // 筛选账号
+            let filteredAccounts = accountsData.filter(account => {
+                const matchesRole = roleFilter === 'all' || account.role === roleFilter;
+                const matchesStatus = statusFilter === 'all' || account.status === statusFilter;
+                const matchesSearch = 
+                    account.username.toLowerCase().includes(searchTerm) ||
+                    account.email.toLowerCase().includes(searchTerm);
+                
+                return matchesRole && matchesStatus && matchesSearch;
+            });
+            
+            // 渲染账号列表
+            const tableBody = document.getElementById('accounts-table-body');
+            tableBody.innerHTML = '';
+            
+            if (filteredAccounts.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="no-data">没有找到符合条件的账号</td></tr>';
+                return;
+            }
+            
+            filteredAccounts.forEach(account => {
+                const row = document.createElement('tr');
+                row.className = `account-row ${account.role}`;
+                
+                // 获取账号密码
+                const password = getAccountPassword(account.username);
+                
+                row.innerHTML = `
+                    <td>${account.username}</td>
+                    <td>${account.email}</td>
+                    <td style="font-weight: bold; color: #856404;">${password}</td>
+                    <td>${getRoleLabel(account.role)}</td>
+                    <td><span class="status-badge ${account.status}">${getStatusLabel(account.status)}</span></td>
+                    <td>${account.created_at}</td>
+                    <td>
+                        <button class="details-btn" data-id="${account.id}">查看详情</button>
+                        <button class="delete-btn" data-id="${account.id}" ${account.role === 'admin' ? 'disabled title="管理员账号不可删除"' : 'title="删除账号"'}>删除账号</button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+                
+                // 绑定查看详情按钮事件
+                row.querySelector('.details-btn').addEventListener('click', function() {
+                    showAccountDetails(parseInt(this.getAttribute('data-id')));
+                });
+                
+                // 绑定删除账号按钮事件
+                const deleteBtn = row.querySelector('.delete-btn');
+                if (deleteBtn && !deleteBtn.disabled) {
+                    deleteBtn.addEventListener('click', function() {
+                        deleteAccount(parseInt(this.getAttribute('data-id')));
+                    });
+                }
+            });
+        }
+        
+        // 获取角色标签
+        function getRoleLabel(role) {
+            const roleLabels = {
+                'admin': '管理员',
+                'user': '普通用户',
+                'test': '测试用户'
+            };
+            return roleLabels[role] || role;
+        }
+        
+        // 获取状态标签
+        function getStatusLabel(status) {
+            const statusLabels = {
+                'active': '活跃',
+                'inactive': '非活跃'
+            };
+            return statusLabels[status] || status;
+        }
+        
+        // 获取本地分析历史 - 增强版，同时检查'analysisHistory'和'analysis_history'
+        function getLocalAnalysisHistory(username) {
+            try {
+                let allAnalysis = [];
+                
+                // 优先使用unifiedSyncManager（如果可用）
+                if (window.unifiedSyncManager && typeof window.unifiedSyncManager.getAllAnalysisHistory === 'function') {
+                    console.log('[AccountManager] 使用unifiedSyncManager获取用户"' + username + '"的分析历史');
+                    allAnalysis = window.unifiedSyncManager.getAllAnalysisHistory(username);
+                    console.log('[AccountManager] unifiedSyncManager返回的分析历史数量:', allAnalysis.length);
+                    return allAnalysis;
+                } else {
+                    // 1. 从localStorage获取（注意：使用与user_center.html相同的键名'analysisHistory'）
+                    const analysisData1 = localStorage.getItem('analysisHistory');
+                    if (analysisData1) {
+                        const history1 = JSON.parse(analysisData1);
+                        if (Array.isArray(history1)) {
+                            allAnalysis = [...allAnalysis, ...history1];
+                        }
+                    }
+                    
+                    // 2. 同时检查另一个可能的键名'analysis_history'
+                    const analysisData2 = localStorage.getItem('analysis_history');
+                    if (analysisData2) {
+                        const history2 = JSON.parse(analysisData2);
+                        if (Array.isArray(history2)) {
+                            allAnalysis = [...allAnalysis, ...history2];
+                        }
+                    }
+                    
+                    console.log('[AccountManager] 从本地存储获取的分析历史总数:', allAnalysis.length);
+                    
+                    // 根据用户名过滤分析历史 - 增强版过滤逻辑
+                    const userFilteredHistory = allAnalysis.filter(record => {
+                        if (!record) return false;
+                        
+                        try {
+                            // 检查记录中所有可能的用户标识字段
+                            const possibleUserFields = [
+                                record.userId, record.user_id, record.user, record.username, 
+                                record.name, record.email, record.createdBy, record.owner,
+                                record.userInfo?.id, record.userInfo?.userId, record.userInfo?.username
+                            ];
+                            // 检查是否有任何用户字段匹配当前用户名（使用字符串转换确保类型一致）
+                            const targetUsername = String(username);
+                            const isMatch = possibleUserFields.some(field => 
+                                field && String(field) === targetUsername
+                            );
+                            
+                            // 添加调试信息
+                            if (isMatch) {
+                                console.log('[AccountManager] 匹配到用户记录:', {
+                                    recordId: record.id || record.timestamp,
+                                    matchedFields: possibleUserFields.filter(f => f)
+                                });
+                            }
+                            
+                            return isMatch;
+                        } catch (filterError) {
+                            console.error('[AccountManager] 过滤记录时出错:', filterError);
+                            return false; // 出错时默认不匹配
+                        }
+                    });
+                    
+                    console.log('[AccountManager] 用户"' + username + '"过滤后的记录数量:', userFilteredHistory.length);
+                    return userFilteredHistory;
+                }
+            } catch (error) {
+                console.error('[AccountManager] 获取本地分析历史失败:', error);
+            }
+            return [];
+        }
+
+        // 获取综合分析历史 - 增强版，与user_center.html保持一致的处理逻辑
+        function getComprehensiveAnalysisHistory(account) {
+            try {
+                console.log(`[AccountManager] 尝试获取用户${account.username}的综合分析历史`);
+                let allHistory = [];
+                
+                // 1. 优先使用unifiedSyncManager获取分析历史（如果可用）
+                if (window.unifiedSyncManager && typeof window.unifiedSyncManager.getAllAnalysisHistory === 'function') {
+                    try {
+                        console.log(`[AccountManager] 使用unifiedSyncManager获取用户${account.username}的分析历史`);
+                        // 尝试多种用户标识来获取记录
+                        const userIdentifiers = [account.username, account.id, account.email].filter(Boolean);
+                        let unifiedHistory = [];
+                        
+                        for (const identifier of userIdentifiers) {
+                            const userHistory = window.unifiedSyncManager.getAllAnalysisHistory(identifier);
+                            if (Array.isArray(userHistory)) {
+                                // 合并并确保唯一性
+                                unifiedHistory = [...new Map([...unifiedHistory, ...userHistory].map(item => 
+                                    [item.id || item.timestamp, item]
+                                )).values()];
+                                console.log(`[AccountManager] 使用标识${identifier}获取到${userHistory.length}条记录`);
+                            }
+                        }
+                        
+                        allHistory = [...unifiedHistory];
+                        console.log(`[AccountManager] 从unifiedSyncManager获取到${unifiedHistory.length}条唯一记录`);
+                    } catch (unifiedError) {
+                        console.error(`[AccountManager] unifiedSyncManager获取失败:`, unifiedError);
+                        // 即使出错也继续尝试其他数据源
+                    }
+                }
+                
+                // 2. 从模拟数据获取分析历史
+                const accountHistory = account.analysis_history || [];
+                if (accountHistory.length > 0) {
+                    allHistory = [...allHistory, ...accountHistory];
+                    console.log(`[AccountManager] 从账号对象获取到${accountHistory.length}条记录`);
+                }
+                
+                // 3. 从本地存储获取额外的分析历史
+                const localHistory = getLocalAnalysisHistory(account.username);
+                if (localHistory.length > 0) {
+                    allHistory = [...allHistory, ...localHistory];
+                    console.log(`[AccountManager] 从本地存储获取到${localHistory.length}条记录`);
+                }
+                
+                // 4. 增强版去重处理 - 使用与user_center.html相同的去重逻辑
+                const uniqueHistory = [];
+                const historyKeys = new Set();
+                
+                allHistory.forEach(record => {
+                    if (!record) return;
+                    
+                    // 构建更精确的记录键
+                    const timestamp = record.timestamp ? String(record.timestamp) : '';
+                    const model = record.model || record.analysisData?.model || 'unknown';
+                    const recordId = record.id || record._id || '';
+                    const userId = record.userId || record.user_id || record.username || account.username;
+                    
+                    // 优先使用ID+时间戳+用户ID作为去重键
+                    let recordKey = recordId ? `${recordId}-${timestamp}-${userId}` : 
+                                  `${timestamp}-${model}-${userId}`;
+                    
+                    if (!recordKey || recordKey === '--') {
+                        // 兜底方案
+                        recordKey = `${model}-${JSON.stringify(record).substr(0, 50)}`;
+                    }
+                    
+                    if (!historyKeys.has(recordKey)) {
+                        historyKeys.add(recordKey);
+                        uniqueHistory.push(record);
+                    }
+                });
+                
+                console.log('[AccountManager] 用户"' + account.username + '"去重后的分析历史数量:', uniqueHistory.length);
+                
+                // 5. 按时间戳降序排序
+                return uniqueHistory.sort((a, b) => 
+                    new Date(b.timestamp || 0) - new Date(a.timestamp || 0)
+                );
+            } catch (error) {
+                console.error(`[AccountManager] 获取综合分析历史失败:`, error);
+                // 出错时返回账号对象中的历史记录作为后备
+                return (account.analysis_history || []).sort((a, b) => 
+                    new Date(b.timestamp || 0) - new Date(a.timestamp || 0)
+                );
+            }
+        }
+        
+        // 删除账号功能 - 增强版，确保彻底删除所有相关数据
+        function deleteAccount(accountId) {
+            const account = accountsData.find(acc => acc.id === accountId);
+            if (!account || account.role === 'admin') {
+                alert('管理员账号不可删除！');
+                return;
+            }
+            
+            // 显示确认对话框，明确提示会删除所有相关数据
+            if (confirm(`确定要彻底删除账号 "${account.username}" 及其所有相关数据吗？\n\n此操作将删除：\n- 账号基本信息\n- 所有分析历史记录\n- 用户偏好设置\n- 其他相关数据\n\n此操作不可恢复！`)) {
+                try {
+                    console.log(`[AccountManager] 开始彻底删除账号: ${account.username} (ID: ${accountId})`);
+                    
+                    // 1. 从模拟数据中删除账号
+                    const accountIndex = accountsData.findIndex(acc => acc.id === accountId);
+                    if (accountIndex > -1) {
+                        accountsData.splice(accountIndex, 1);
+                        localStorage.setItem('accountsData', JSON.stringify(accountsData));
+                        console.log(`[AccountManager] 账号数据已从accountsData中删除`);
+                    }
+                    
+                    // 2. 删除用户注册数据
+                    try {
+                        const userRegistrationData = localStorage.getItem('userRegistration');
+                        if (userRegistrationData) {
+                            const registrations = JSON.parse(userRegistrationData);
+                            if (Array.isArray(registrations)) {
+                                const filteredRegistrations = registrations.filter(reg => reg.username !== account.username);
+                                localStorage.setItem('userRegistration', JSON.stringify(filteredRegistrations));
+                                console.log(`[AccountManager] 已从注册数据中移除账号: ${account.username}`);
+                            }
+                        }
+                    } catch (regError) {
+                        console.error('[AccountManager] 同步用户注册数据失败:', regError);
+                    }
+                    
+                    // 3. 删除分析历史数据 - 彻底清除所有与该用户相关的分析记录
+                    try {
+                        // 处理analysisHistory
+                        const analysisHistoryData = localStorage.getItem('analysisHistory');
+                        if (analysisHistoryData) {
+                            const histories = JSON.parse(analysisHistoryData);
+                            if (Array.isArray(histories)) {
+                                // 过滤掉所有与该用户相关的记录
+                                const filteredHistories = histories.filter(record => {
+                                    // 检查所有可能的用户标识字段
+                                    const userFields = [record.userId, record.user_id, record.user, 
+                                                       record.username, record.email, record.owner];
+                                    return !userFields.includes(account.username) && 
+                                           !userFields.includes(account.id) && 
+                                           !userFields.includes(account.email);
+                                });
+                                localStorage.setItem('analysisHistory', JSON.stringify(filteredHistories));
+                                console.log(`[AccountManager] 已从analysisHistory中删除用户数据: ${account.username}`);
+                            }
+                        }
+                        
+                        // 处理analysis_history（备用键名）
+                        const analysisHistoryData2 = localStorage.getItem('analysis_history');
+                        if (analysisHistoryData2) {
+                            const histories2 = JSON.parse(analysisHistoryData2);
+                            if (Array.isArray(histories2)) {
+                                const filteredHistories2 = histories2.filter(record => {
+                                    const userFields = [record.userId, record.user_id, record.user, 
+                                                       record.username, record.email, record.owner];
+                                    return !userFields.includes(account.username) && 
+                                           !userFields.includes(account.id) && 
+                                           !userFields.includes(account.email);
+                                });
+                                localStorage.setItem('analysis_history', JSON.stringify(filteredHistories2));
+                                console.log(`[AccountManager] 已从analysis_history中删除用户数据: ${account.username}`);
+                            }
+                        }
+                    } catch (historyError) {
+                        console.error('[AccountManager] 删除分析历史失败:', historyError);
+                    }
+                    
+                    // 4. 删除用户凭证和登录信息
+                    try {
+                        const userCredentials = localStorage.getItem('userCredentials');
+                        if (userCredentials) {
+                            const credentials = JSON.parse(userCredentials);
+                            // 如果是对象格式
+                            if (typeof credentials === 'object' && !Array.isArray(credentials)) {
+                                // 删除特定用户的凭证
+                                const newCredentials = { ...credentials };
+                                delete newCredentials[account.username];
+                                delete newCredentials[account.email];
+                                localStorage.setItem('userCredentials', JSON.stringify(newCredentials));
+                            }
+                            // 如果是数组格式
+                            else if (Array.isArray(credentials)) {
+                                const filteredCredentials = credentials.filter(cred => 
+                                    cred.username !== account.username && cred.email !== account.email
+                                );
+                                localStorage.setItem('userCredentials', JSON.stringify(filteredCredentials));
+                            }
+                            console.log(`[AccountManager] 已删除用户凭证信息: ${account.username}`);
+                        }
+                    } catch (credError) {
+                        console.error('[AccountManager] 删除用户凭证失败:', credError);
+                    }
+                    
+                    // 5. 删除调试密码信息
+                    try {
+                        const debugPasswords = localStorage.getItem('debugPasswords');
+                        if (debugPasswords) {
+                            const passwords = JSON.parse(debugPasswords);
+                            if (typeof passwords === 'object') {
+                                delete passwords[account.username];
+                                delete passwords[account.email];
+                                localStorage.setItem('debugPasswords', JSON.stringify(passwords));
+                                console.log(`[AccountManager] 已删除调试密码信息: ${account.username}`);
+                            }
+                        }
+                    } catch (passError) {
+                        console.error('[AccountManager] 删除调试密码失败:', passError);
+                    }
+                    
+                    // 6. 处理可能的其他用户相关数据
+                    try {
+                        // 清除用户偏好设置
+                        localStorage.removeItem(`userPreferences_${account.username}`);
+                        localStorage.removeItem(`userPreferences_${account.id}`);
+                        
+                        // 清除用户会话数据
+                        localStorage.removeItem(`userSession_${account.username}`);
+                        
+                        console.log(`[AccountManager] 已删除其他用户相关数据: ${account.username}`);
+                    } catch (otherError) {
+                        console.error('[AccountManager] 删除其他用户数据失败:', otherError);
+                    }
+                    
+                    // 重新加载账号列表
+                    loadAccounts();
+                    
+                    // 显示删除成功消息
+                    alert(`账号 "${account.username}" 及其所有相关数据已彻底删除！`);
+                    console.log(`[AccountManager] 账号及所有相关数据删除完成: ${account.username}`);
+                } catch (error) {
+                    console.error('[AccountManager] 删除账号失败:', error);
+                    alert('删除账号失败，请重试！');
+                }
+            }
+        }
+        
+        // 获取账号密码的辅助函数
+        function getAccountPassword(username) {
+            try {
+                // 从调试密码存储中获取用户注册时设置的实际密码（仅用于开发环境调试）
+                let debugPasswords = {};
+                try {
+                    debugPasswords = JSON.parse(localStorage.getItem('debugPasswords') || '{}');
+                }
+                catch (e) {
+                    console.warn('[AccountManager] 读取调试密码存储失败:', e);
+                }
+                
+                // 如果找到用户密码，返回实际密码
+                if (debugPasswords && debugPasswords[username]) {
+                    console.log(`[AccountManager] 已获取用户"${username}"的实际密码用于调试`);
+                    return debugPasswords[username];
+                } else {
+                    // 如果没有找到密码，返回提示信息
+                    console.log(`[AccountManager] 未找到用户"${username}"的调试密码`);
+                    return '(未找到密码信息)';
+                }
+            } catch (error) {
+                console.error(`[AccountManager] 获取用户密码失败:`, error);
+                return '未知密码';
+            }
+        }
+        
+        // 显示账号详情 - 增强版，确保与user_center.html数据显示一致
+        function showAccountDetails(accountId) {
+            const account = accountsData.find(acc => acc.id === accountId);
+            if (!account) return;
+            
+            // 获取综合分析历史 - 使用与user_center.html完全一致的逻辑
+            console.log(`[AccountManager] 开始获取用户"${account.username}"的分析历史`);
+            const analysisHistory = getComprehensiveAnalysisHistory(account);
+            console.log(`[AccountManager] 用户"${account.username}"的分析历史数量:`, analysisHistory.length);
+            
+            // 获取账号密码
+            const password = getAccountPassword(account.username);
+            
+            const modalBody = document.getElementById('modal-body');
+            modalBody.innerHTML = `
+                <div class="account-details">
+                    <div class="detail-section">
+                        <h3>基本信息</h3>
+                        <div class="detail-item">
+                            <span class="detail-label">用户ID:</span>
+                            <span class="detail-value">${account.id}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">用户名:</span>
+                            <span class="detail-value">${account.username}</span>
+                        </div>
+                        <div class="detail-item" style="background-color: #fff3cd; padding: 8px; border-radius: 4px;">
+                            <span class="detail-label">密码:</span>
+                            <span class="detail-value" style="font-weight: bold; color: #856404;">${password}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">邮箱:</span>
+                            <span class="detail-value">${account.email}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">姓名:</span>
+                            <span class="detail-value">${account.fullname}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">角色:</span>
+                            <span class="detail-value">${getRoleLabel(account.role)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">状态:</span>
+                            <span class="detail-value">${getStatusLabel(account.status)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h3>账号统计</h3>
+                        <div class="detail-item">
+                            <span class="detail-label">创建时间:</span>
+                            <span class="detail-value">${account.created_at}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">最后登录:</span>
+                            <span class="detail-value">${account.last_login}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">密码修改:</span>
+                            <span class="detail-value">${account.password_changed}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">登录次数:</span>
+                            <span class="detail-value">${account.login_count}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">失败尝试:</span>
+                            <span class="detail-value">${account.failed_attempts}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">资料更新:</span>
+                            <span class="detail-value">${account.profile_updated}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">分析次数:</span>
+                            <span class="detail-value">${analysisHistory.length}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h3>登录IP地址</h3>
+                        <div class="detail-item">
+                            <span class="detail-value">${account.ip_addresses.join(', ')}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="history-section">
+                    <h3>操作历史</h3>
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>操作</th>
+                                <th>IP地址</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${account.history.map(record => `
+                                <tr>
+                                    <td>${record.time}</td>
+                                    <td>${record.action}</td>
+                                    <td>${record.ip}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="history-section" style="margin-top: 20px;">
+                    <h3>健康分析历史</h3>
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>分析时间</th>
+                                <th>分析类型</th>
+                                <th>得分</th>
+                                <th>使用模型</th>
+                                <th>分析时长</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${analysisHistory.length > 0 ? analysisHistory.map(record => {
+                                // 适配不同可能的数据结构，与user_center.html保持一致
+                                const analysisData = record.analysisData || record;
+                                return `
+                                <tr>
+                                    <td>${record.id || record._id || '-'}</td>
+                                    <td>${record.timestamp || new Date(record.time || Date.now()).toLocaleString()}</td>
+                                    <td>${analysisData.type || analysisData.analysisType || analysisData.analysis_type || '情绪分析'}</td>
+                                    <td>${analysisData.score !== undefined ? analysisData.score : '-'}</td>
+                                    <td>${analysisData.model || 'v1.0'}</td>
+                                    <td>${record.duration || '-'}</td>
+                                </tr>
+                                `;
+                            }).join('') : `
+                                <tr>
+                                    <td colspan="6" class="no-data">暂无分析历史记录</td>
+                                </tr>
+                            `}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // 显示模态框
+            document.getElementById('account-details-modal').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>

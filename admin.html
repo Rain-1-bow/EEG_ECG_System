@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超级管理员系统 - 抑郁症分析系统</title>
+    <!-- 性能优化：预加载关键资源 -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="description" content="超级管理员系统，管理整个网站用户及其数据">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#8b5cf6',
+                        accent: '#ec4899',
+                        dark: '#1e1b4b',
+                        light: '#f8fafc',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0) translateZ(0)' },
+                            '50%': { transform: 'translateY(-10px) translateZ(0)' },
+                        }
+                    }
+                },
+            }
+        }
+    </script>
+    <style>
+        /* 必要的自定义样式 */
+        .content-auto { content-visibility: auto; }
+        .text-shadow { text-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08); }
+        .text-shadow-lg { text-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .gradient-mask-b {
+            mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+        }
+        .bg-blur {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        /* 平滑滚动 */
+        html { scroll-behavior: smooth; }
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* 表单动画 */
+        .form-input {
+            transition: all 0.3s ease;
+        }
+        .form-input:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        /* 侧边栏动画 */
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        .sidebar.active {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 overflow-x-hidden min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 bg-white/90 bg-blur shadow-md">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16 sm:h-20">
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-shield text-primary text-2xl sm:text-3xl"></i>
+                    <span class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">超级管理员系统</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="admin-name" class="text-gray-600 font-medium hidden md:block">管理员</span>
+                    <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-md shadow-red-200">
+                        <i class="fa fa-sign-out mr-2"></i>退出登录
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow pt-24 pb-20">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- 登录区域 -->
+            <div id="login-section" class="max-w-md mx-auto mt-10">
+                <div class="bg-white rounded-2xl shadow-2xl overflow-hidden p-8">
+                    <div class="text-center mb-8">
+                        <i class="fa fa-shield text-primary text-4xl mb-4"></i>
+                        <h2 class="text-2xl font-bold text-dark">管理员登录</h2>
+                        <p class="text-gray-500 mt-2">请输入管理员账号和密码</p>
+                    </div>
+                    <form id="adminLoginForm" class="space-y-6">
+                        <div>
+                            <label for="admin-username" class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa fa-user text-gray-400"></i>
+                                </div>
+                                <input type="text" id="admin-username" name="username" class="form-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入管理员用户名" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="admin-password" class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa fa-lock text-gray-400"></i>
+                                </div>
+                                <input type="password" id="admin-password" name="password" class="form-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入管理员密码" required>
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <button type="button" id="toggle-admin-password" class="text-gray-400 hover:text-gray-600">
+                                        <i class="fa fa-eye-slash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white px-6 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-primary/20">
+                                登录
+                            </button>
+                        </div>
+                    </form>
+                    <div class="mt-6 text-center">
+                        <p class="text-sm text-gray-500">还没有管理员账号？ <a href="#" id="create-admin-btn" class="text-primary hover:underline font-medium">创建管理员</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 创建管理员区域 -->
+            <div id="create-admin-section" class="max-w-md mx-auto mt-10 hidden">
+                <div class="bg-white rounded-2xl shadow-2xl overflow-hidden p-8">
+                    <div class="text-center mb-8">
+                        <i class="fa fa-user-plus text-primary text-4xl mb-4"></i>
+                        <h2 class="text-2xl font-bold text-dark">创建管理员账号</h2>
+                        <p class="text-gray-500 mt-2">仅允许创建一个管理员账号</p>
+                    </div>
+                    <form id="createAdminForm" class="space-y-6">
+                        <div>
+                            <label for="create-username" class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa fa-user text-gray-400"></i>
+                                </div>
+                                <input type="text" id="create-username" name="username" class="form-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入管理员用户名" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="create-email" class="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa fa-envelope text-gray-400"></i>
+                                </div>
+                                <input type="email" id="create-email" name="email" class="form-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入管理员邮箱" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="create-password" class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa fa-lock text-gray-400"></i>
+                                </div>
+                                <input type="password" id="create-password" name="password" class="form-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入管理员密码" required>
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <button type="button" id="toggle-create-password" class="text-gray-400 hover:text-gray-600">
+                                        <i class="fa fa-eye-slash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">密码至少8位，包含字母和数字</p>
+                        </div>
+                        <div>
+                            <label for="create-fullname" class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa fa-user-circle text-gray-400"></i>
+                                </div>
+                                <input type="text" id="create-fullname" name="fullname" class="form-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入管理员姓名">
+                            </div>
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white px-6 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-primary/20">
+                                创建管理员
+                            </button>
+                        </div>
+                    </form>
+                    <div class="mt-6 text-center">
+                        <p class="text-sm text-gray-500">已有管理员账号？ <a href="#" id="back-to-login-btn" class="text-primary hover:underline font-medium">返回登录</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 管理界面 -->
+            <div id="admin-dashboard" class="hidden">
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <!-- 顶部导航 -->
+                    <div class="border-b border-gray-200">
+                        <div class="flex items-center justify-between p-6">
+                            <h1 class="text-2xl font-bold text-dark">用户管理</h1>
+                            <div class="flex items-center space-x-4">
+                                <button id="create-admin-btn-dashboard" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-md shadow-green-200">
+                                    <i class="fa fa-user-plus mr-2"></i>创建管理员
+                                </button>
+                                <div class="relative">
+                                    <input type="text" id="search-users" class="form-input pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="搜索用户...">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fa fa-search text-gray-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 用户列表 -->
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            ID
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            用户名
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            邮箱
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            姓名
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            角色
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            创建时间
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            操作
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="users-table-body">
+                                    <!-- 用户数据将通过JavaScript动态填充 -->
+                                    <tr>
+                                        <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                                            <i class="fa fa-spinner fa-spin text-2xl mb-2 block"></i>
+                                            <p>加载用户数据中...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 分页 -->
+                        <div class="flex items-center justify-between mt-6" id="pagination">
+                            <div class="text-sm text-gray-500">
+                                显示 <span id="showing-start">1</span> 到 <span id="showing-end">10</span> 共 <span id="total-users">0</span> 个用户
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button id="prev-page" class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    上一页
+                                </button>
+                                <button id="next-page" class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    下一页
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用户详情模态框 -->
+                <div id="user-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+                    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                        <div class="p-6 border-b border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <h2 class="text-xl font-bold text-dark" id="modal-title">用户详情</h2>
+                                <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fa fa-times text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-6" id="modal-content">
+                            <!-- 模态框内容将通过JavaScript动态填充 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 创建管理员模态框 -->
+                <div id="create-admin-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+                    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+                        <div class="p-6 border-b border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <h2 class="text-xl font-bold text-dark">创建管理员</h2>
+                                <button id="close-create-admin-modal" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fa fa-times text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <form id="createAdminFormDashboard" class="space-y-6">
+                                <div>
+                                    <label for="dashboard-create-username" class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fa fa-user text-gray-400"></i>
+                                        </div>
+                                        <input type="text" id="dashboard-create-username" name="username" class="form-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入管理员用户名" required>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="dashboard-create-email" class="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fa fa-envelope text-gray-400"></i>
+                                        </div>
+                                        <input type="email" id="dashboard-create-email" name="email" class="form-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入管理员邮箱" required>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="dashboard-create-password" class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fa fa-lock text-gray-400"></i>
+                                        </div>
+                                        <input type="password" id="dashboard-create-password" name="password" class="form-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入管理员密码" required>
+                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                            <button type="button" id="toggle-dashboard-create-password" class="text-gray-400 hover:text-gray-600">
+                                                <i class="fa fa-eye-slash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500">密码至少8位，包含字母和数字</p>
+                                </div>
+                                <div>
+                                    <label for="dashboard-create-fullname" class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fa fa-user-circle text-gray-400"></i>
+                                        </div>
+                                        <input type="text" id="dashboard-create-fullname" name="fullname" class="form-input w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入管理员姓名">
+                                    </div>
+                                </div>
+                                <div class="flex justify-end space-x-3">
+                                    <button type="button" id="cancel-create-admin" class="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50">
+                                        取消
+                                    </button>
+                                    <button type="submit" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">
+                                        创建
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-gray-300 py-10">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <i class="fa fa-shield text-primary text-2xl"></i>
+                    <span class="text-xl font-bold text-white">超级管理员系统</span>
+                </div>
+                <p class="text-gray-400 mb-6">
+                    管理整个网站用户及其数据，确保系统安全稳定运行。
+                </p>
+                <p class="text-gray-600">&copy; 2026 抑郁症分析系统. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // 全局变量
+        let currentPage = 1;
+        let totalPages = 1;
+        let searchTerm = '';
+        let adminToken = localStorage.getItem('adminToken');
+        let currentAdmin = JSON.parse(localStorage.getItem('currentAdmin'));
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查是否已登录
+            if (adminToken && currentAdmin) {
+                showAdminDashboard();
+            } else {
+                showLoginSection();
+            }
+
+            // 绑定事件
+            bindEvents();
+        });
+
+        // 绑定事件
+        function bindEvents() {
+            // 密码显示/隐藏
+            const toggleAdminPassword = document.getElementById('toggle-admin-password');
+            const adminPassword = document.getElementById('admin-password');
+            if (toggleAdminPassword) {
+                toggleAdminPassword.addEventListener('click', function() {
+                    const type = adminPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+                    adminPassword.setAttribute('type', type);
+                    toggleAdminPassword.innerHTML = type === 'password' ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
+                });
+            }
+
+            const toggleCreatePassword = document.getElementById('toggle-create-password');
+            const createPassword = document.getElementById('create-password');
+            if (toggleCreatePassword) {
+                toggleCreatePassword.addEventListener('click', function() {
+                    const type = createPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+                    createPassword.setAttribute('type', type);
+                    toggleCreatePassword.innerHTML = type === 'password' ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
+                });
+            }
+
+            // 登录表单提交
+            const adminLoginForm = document.getElementById('adminLoginForm');
+            if (adminLoginForm) {
+                adminLoginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('admin-username').value;
+                    const password = document.getElementById('admin-password').value;
+                    
+                    if (!username || !password) {
+                        alert('请输入用户名和密码');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch('http://localhost:50000/api/users/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ username, password })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            // 检查是否是管理员
+                            if (data.user.role === 'admin') {
+                                // 存储管理员信息
+                                localStorage.setItem('adminToken', data.token);
+                                localStorage.setItem('currentAdmin', JSON.stringify(data.user));
+                                adminToken = data.token;
+                                currentAdmin = data.user;
+                                
+                                // 显示管理界面
+                                showAdminDashboard();
+                            } else {
+                                alert('您不是管理员，没有权限访问此页面');
+                            }
+                        } else {
+                            alert(data.error || '登录失败，请检查用户名和密码');
+                        }
+                    } catch (error) {
+                        console.error('登录请求失败:', error);
+                        alert('网络错误，请稍后重试');
+                    }
+                });
+            }
+
+            // 创建管理员表单提交
+            const createAdminForm = document.getElementById('createAdminForm');
+            if (createAdminForm) {
+                createAdminForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('create-username').value;
+                    const email = document.getElementById('create-email').value;
+                    const password = document.getElementById('create-password').value;
+                    const fullname = document.getElementById('create-fullname').value;
+                    
+                    if (!username || !email || !password) {
+                        alert('请填写所有必填字段');
+                        return;
+                    }
+                    
+                    if (password.length < 8) {
+                        alert('密码至少需要8位');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch('http://localhost:50000/api/users/register', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ username, email, password, fullname })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            // 存储管理员信息
+                            localStorage.setItem('adminToken', data.token);
+                            localStorage.setItem('currentAdmin', JSON.stringify({ id: data.userId, username, email, fullname, role: 'admin' }));
+                            adminToken = data.token;
+                            currentAdmin = { id: data.userId, username, email, fullname, role: 'admin' };
+                            
+                            // 显示管理界面
+                            showAdminDashboard();
+                        } else {
+                            alert(data.error || '创建管理员失败，请稍后重试');
+                        }
+                    } catch (error) {
+                        console.error('创建管理员请求失败:', error);
+                        alert('网络错误，请稍后重试');
+                    }
+                });
+            }
+
+            // 切换到创建管理员页面
+            const createAdminBtn = document.getElementById('create-admin-btn');
+            if (createAdminBtn) {
+                createAdminBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showCreateAdminSection();
+                });
+            }
+
+            // 返回到登录页面
+            const backToLoginBtn = document.getElementById('back-to-login-btn');
+            if (backToLoginBtn) {
+                backToLoginBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showLoginSection();
+                });
+            }
+
+            // 退出登录
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    localStorage.removeItem('adminToken');
+                    localStorage.removeItem('currentAdmin');
+                    adminToken = null;
+                    currentAdmin = null;
+                    showLoginSection();
+                });
+            }
+
+            // 搜索用户
+            const searchUsers = document.getElementById('search-users');
+            if (searchUsers) {
+                searchUsers.addEventListener('input', function() {
+                    searchTerm = this.value;
+                    currentPage = 1;
+                    loadUsers();
+                });
+            }
+
+            // 分页按钮
+            const prevPageBtn = document.getElementById('prev-page');
+            const nextPageBtn = document.getElementById('next-page');
+            if (prevPageBtn && nextPageBtn) {
+                prevPageBtn.addEventListener('click', function() {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        loadUsers();
+                    }
+                });
+
+                nextPageBtn.addEventListener('click', function() {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        loadUsers();
+                    }
+                });
+            }
+
+            // 关闭模态框
+            const closeModal = document.getElementById('close-modal');
+            if (closeModal) {
+                closeModal.addEventListener('click', function() {
+                    document.getElementById('user-modal').classList.add('hidden');
+                });
+            }
+
+            // 创建管理员相关事件
+            const createAdminBtnDashboard = document.getElementById('create-admin-btn-dashboard');
+            const createAdminModal = document.getElementById('create-admin-modal');
+            const closeCreateAdminModal = document.getElementById('close-create-admin-modal');
+            const cancelCreateAdmin = document.getElementById('cancel-create-admin');
+            
+            if (createAdminBtnDashboard) {
+                createAdminBtnDashboard.addEventListener('click', function() {
+                    createAdminModal.classList.remove('hidden');
+                });
+            }
+            
+            if (closeCreateAdminModal) {
+                closeCreateAdminModal.addEventListener('click', function() {
+                    createAdminModal.classList.add('hidden');
+                });
+            }
+            
+            if (cancelCreateAdmin) {
+                cancelCreateAdmin.addEventListener('click', function() {
+                    createAdminModal.classList.add('hidden');
+                });
+            }
+
+            // 密码显示/隐藏
+            const toggleDashboardCreatePassword = document.getElementById('toggle-dashboard-create-password');
+            const dashboardCreatePassword = document.getElementById('dashboard-create-password');
+            if (toggleDashboardCreatePassword) {
+                toggleDashboardCreatePassword.addEventListener('click', function() {
+                    const type = dashboardCreatePassword.getAttribute('type') === 'password' ? 'text' : 'password';
+                    dashboardCreatePassword.setAttribute('type', type);
+                    toggleDashboardCreatePassword.innerHTML = type === 'password' ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
+                });
+            }
+
+            // 创建管理员表单提交
+            const createAdminFormDashboard = document.getElementById('createAdminFormDashboard');
+            if (createAdminFormDashboard) {
+                createAdminFormDashboard.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('dashboard-create-username').value;
+                    const email = document.getElementById('dashboard-create-email').value;
+                    const password = document.getElementById('dashboard-create-password').value;
+                    const fullname = document.getElementById('dashboard-create-fullname').value;
+                    
+                    if (!username || !email || !password) {
+                        alert('请填写所有必填字段');
+                        return;
+                    }
+                    
+                    if (password.length < 8) {
+                        alert('密码至少需要8位');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch('http://localhost:50000/api/users/admin/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${adminToken}`
+                            },
+                            body: JSON.stringify({ username, email, password, fullname })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            alert('管理员创建成功');
+                            createAdminModal.classList.add('hidden');
+                            // 重置表单
+                            createAdminFormDashboard.reset();
+                            // 重新加载用户列表
+                            loadUsers();
+                        } else {
+                            alert(data.error || '创建管理员失败，请稍后重试');
+                        }
+                    } catch (error) {
+                        console.error('创建管理员请求失败:', error);
+                        alert('网络错误，请稍后重试');
+                    }
+                });
+            }
+        }
+
+        // 显示登录区域
+        function showLoginSection() {
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('create-admin-section').classList.add('hidden');
+            document.getElementById('admin-dashboard').classList.add('hidden');
+        }
+
+        // 显示创建管理员区域
+        function showCreateAdminSection() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('create-admin-section').classList.remove('hidden');
+            document.getElementById('admin-dashboard').classList.add('hidden');
+        }
+
+        // 显示管理员仪表板
+        function showAdminDashboard() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('create-admin-section').classList.add('hidden');
+            document.getElementById('admin-dashboard').classList.remove('hidden');
+            
+            // 更新管理员名称
+            if (currentAdmin && document.getElementById('admin-name')) {
+                document.getElementById('admin-name').textContent = currentAdmin.username || '管理员';
+            }
+            
+            // 加载用户数据
+            loadUsers();
+        }
+
+        // 加载用户数据
+        async function loadUsers() {
+            try {
+                const response = await fetch(`http://localhost:50000/api/users/all?page=${currentPage}&limit=10&search=${encodeURIComponent(searchTerm)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    renderUsers(data.users);
+                    updatePagination(data.pagination);
+                } else {
+                    alert(data.error || '加载用户数据失败');
+                }
+            } catch (error) {
+                console.error('加载用户数据失败:', error);
+                alert('网络错误，请稍后重试');
+            }
+        }
+
+        // 渲染用户列表
+        function renderUsers(users) {
+            const tableBody = document.getElementById('users-table-body');
+            
+            if (users.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                            <i class="fa fa-user-o text-2xl mb-2 block"></i>
+                            <p>没有找到用户数据</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tableBody.innerHTML = users.map(user => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${user.id}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        ${user.username}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${user.email}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${user.fullname || '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">
+                            ${user.role === 'admin' ? '管理员' : '普通用户'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${new Date(user.created_at).toLocaleString()}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-primary hover:text-primary/80 mr-3" onclick="viewUserDetails(${user.id})"><i class="fa fa-eye"></i> 查看</button>
+                        <button class="text-warning hover:text-warning/80 mr-3" onclick="changeUserRole(${user.id}, '${user.role}')"><i class="fa fa-user-circle"></i> 角色</button>
+                        <button class="text-danger hover:text-danger/80" onclick="deleteUser(${user.id})"><i class="fa fa-trash"></i> 删除</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 更新分页信息
+        function updatePagination(pagination) {
+            currentPage = pagination.page;
+            totalPages = pagination.totalPages;
+            
+            document.getElementById('showing-start').textContent = (pagination.page - 1) * pagination.limit + 1;
+            document.getElementById('showing-end').textContent = Math.min(pagination.page * pagination.limit, pagination.total);
+            document.getElementById('total-users').textContent = pagination.total;
+            
+            document.getElementById('prev-page').disabled = pagination.page === 1;
+            document.getElementById('next-page').disabled = pagination.page === pagination.totalPages;
+        }
+
+        // 查看用户详情
+        async function viewUserDetails(userId) {
+            try {
+                // 获取用户信息（使用管理员权限获取指定用户信息）
+                const userResponse = await fetch(`http://localhost:50000/api/users/profile?userId=${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                const userData = await userResponse.json();
+                
+                // 获取用户分析历史（使用管理员权限获取指定用户的分析历史）
+                const historyResponse = await fetch(`http://localhost:50000/api/analysis/records?userId=${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                const historyData = await historyResponse.json();
+                
+                if (userResponse.ok && historyResponse.ok) {
+                    const modalContent = document.getElementById('modal-content');
+                    modalContent.innerHTML = `
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">用户基本信息</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-sm text-gray-500">用户ID</p>
+                                        <p class="text-sm font-medium text-gray-900">${userData.id}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">用户名</p>
+                                        <p class="text-sm font-medium text-gray-900">${userData.username}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">邮箱</p>
+                                        <p class="text-sm font-medium text-gray-900">${userData.email}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">姓名</p>
+                                        <p class="text-sm font-medium text-gray-900">${userData.fullname || '-'}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">角色</p>
+                                        <p class="text-sm font-medium text-gray-900">${userData.role === 'admin' ? '管理员' : '普通用户'}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">创建时间</p>
+                                        <p class="text-sm font-medium text-gray-900">${new Date(userData.created_at).toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">分析历史</h3>
+                                ${historyData.length > 0 ? `
+                                    <div class="overflow-x-auto">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        时间
+                                                    </th>
+                                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        分数
+                                                    </th>
+                                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        分析数据
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white divide-y divide-gray-200">
+                                                ${historyData.map(item => `
+                                                    <tr>
+                                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                                            ${new Date(item.timestamp).toLocaleString()}
+                                                        </td>
+                                                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                            ${item.score}
+                                                        </td>
+                                                        <td class="px-4 py-2 text-sm text-gray-500">
+                                                            <pre class="whitespace-pre-wrap text-xs">${JSON.stringify(item.analysis_data, null, 2)}</pre>
+                                                        </td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ` : `
+                                    <p class="text-sm text-gray-500">该用户暂无分析历史</p>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('user-modal').classList.remove('hidden');
+                } else {
+                    alert('获取用户详情失败');
+                }
+            } catch (error) {
+                console.error('获取用户详情失败:', error);
+                alert('网络错误，请稍后重试');
+            }
+        }
+
+        // 更改用户角色
+        function changeUserRole(userId, currentRole) {
+            const newRole = currentRole === 'admin' ? 'user' : 'admin';
+            if (confirm(`确定要将用户角色更改为${newRole === 'admin' ? '管理员' : '普通用户'}吗？`)) {
+                changeRole(userId, newRole);
+            }
+        }
+
+        // 执行角色更改
+        async function changeRole(userId, role) {
+            try {
+                const response = await fetch(`http://localhost:50000/api/users/${userId}/role`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ role })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('用户角色更新成功');
+                    loadUsers();
+                } else {
+                    alert(data.error || '角色更新失败');
+                }
+            } catch (error) {
+                console.error('角色更新失败:', error);
+                alert('网络错误，请稍后重试');
+            }
+        }
+
+        // 删除用户
+        function deleteUser(userId) {
+            if (confirm('确定要删除该用户吗？此操作不可恢复，且会删除该用户的所有分析历史。')) {
+                deleteUserById(userId);
+            }
+        }
+
+        // 执行用户删除
+        async function deleteUserById(userId) {
+            try {
+                const response = await fetch(`http://localhost:50000/api/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('用户删除成功');
+                    loadUsers();
+                } else {
+                    alert(data.error || '用户删除失败');
+                }
+            } catch (error) {
+                console.error('用户删除失败:', error);
+                alert('网络错误，请稍后重试');
+            }
+        }
+    </script>
+</body>
+</html>

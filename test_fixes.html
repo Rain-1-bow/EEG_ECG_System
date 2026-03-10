@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修复测试页面</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        .auth-status {
+            margin-bottom: 5px;
+        }
+        
+        .auth-controls {
+            margin-bottom: 15px;
+        }
+        
+        .auth-controls input {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .auth-controls button {
+            padding: 8px 12px;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-ok {
+            background-color: #2ecc71;
+        }
+        .status-error {
+            background-color: #e74c3c;
+        }
+        .log-output {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>修复验证测试</h1>
+        
+        <div class="test-section">
+            <h2>1. 加载修复脚本</h2>
+            <button onclick="loadFixScript()">加载修复脚本</button>
+            <div id="script-load-result" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. 检查变量初始化</h2>
+            <button onclick="checkVariables()">检查变量</button>
+            <div id="variables-result" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. 初始化API服务</h2>
+            <button onclick="initApiService()">初始化API服务</button>
+            <div id="api-init-result" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>4. 认证功能测试</h2>
+            <div class="auth-controls">
+                <input type="text" id="token-input" placeholder="输入测试token..." value="test_token_123456">
+                <button onclick="setTokenTest()">设置Token</button>
+                <button onclick="clearTokenTest()">清除Token</button>
+                <button onclick="testAuth()">测试认证</button>
+            </div>
+            <div id="auth-result" class="test-result">
+                <div class="auth-status">
+                    <span class="status-indicator status-error" id="token-status"></span>
+                    <span id="token-text">localStorage中没有保存的token</span>
+                </div>
+                <div class="auth-status">
+                    <span class="status-indicator status-ok" id="api-service-status"></span>
+                    <span id="api-service-text">API服务已初始化</span>
+                </div>
+                <div class="auth-status">
+                    <span class="status-indicator status-error" id="login-status"></span>
+                    <span id="login-status-text">登录状态: false</span>
+                </div>
+                <div class="auth-status">
+                    <span class="status-indicator status-error" id="auth-header-status"></span>
+                    <span id="auth-header-text">Authorization头未设置</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>4. 执行所有修复</h2>
+            <button onclick="applyAllFixes()">执行修复</button>
+            <div id="fixes-result" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>日志输出</h2>
+            <div id="log-output" class="log-output"></div>
+        </div>
+    </div>
+
+    <script>
+        // 重写console.log以同时显示在页面上
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        
+        function appendToLog(message, type = 'log') {
+            const logOutput = document.getElementById('log-output');
+            const timestamp = new Date().toLocaleTimeString();
+            let color = '#ecf0f1'; // 默认颜色
+            
+            if (type === 'error') color = '#e74c3c';
+            else if (type === 'warn') color = '#f39c12';
+            else if (type === 'success') color = '#2ecc71';
+            
+            logOutput.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+        
+        console.log = function(message) {
+            originalConsoleLog.apply(console, arguments);
+            appendToLog(message);
+        };
+        
+        console.error = function(message) {
+            originalConsoleError.apply(console, arguments);
+            appendToLog(message, 'error');
+        };
+        
+        console.warn = function(message) {
+            originalConsoleWarn.apply(console, arguments);
+            appendToLog(message, 'warn');
+        };
+        
+        // 测试函数
+        function loadFixScript() {
+            const resultDiv = document.getElementById('script-load-result');
+            
+            try {
+                // 动态加载修复脚本
+                const script = document.createElement('script');
+                script.src = 'fix_all_issues.js';
+                script.onload = function() {
+                    resultDiv.className = 'test-result success';
+                    resultDiv.innerHTML = '<span class="status-indicator status-ok"></span>修复脚本加载成功！';
+                    console.log('修复脚本加载成功');
+                };
+                script.onerror = function() {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.innerHTML = '<span class="status-indicator status-error"></span>修复脚本加载失败！';
+                    console.error('修复脚本加载失败');
+                };
+                document.head.appendChild(script);
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<span class="status-indicator status-error"></span>加载脚本时出错: ${error.message}`;
+                console.error('加载脚本时出错:', error);
+            }
+        }
+        
+        function checkVariables() {
+            const resultDiv = document.getElementById('variables-result');
+            
+            try {
+                let results = [];
+                
+                // 检查isEditingProfile变量
+                if (typeof window.isEditingProfile !== 'undefined') {
+                    results.push(`<span class="status-indicator status-ok"></span>window.isEditingProfile = ${window.isEditingProfile}`);
+                } else {
+                    results.push(`<span class="status-indicator status-error"></span>window.isEditingProfile 未定义`);
+                }
+                
+                // 检查_userCenterInitialized标记
+                if (typeof window._userCenterInitialized !== 'undefined') {
+                    results.push(`<span class="status-indicator status-ok"></span>window._userCenterInitialized = ${window._userCenterInitialized}`);
+                } else {
+                    results.push(`<span class="status-indicator status-error"></span>window._userCenterInitialized 未定义`);
+                }
+                
+                // 检查修复工具是否可用
+                if (window._fixUtils) {
+                    results.push(`<span class="status-indicator status-ok"></span>修复工具函数已加载`);
+                } else {
+                    results.push(`<span class="status-indicator status-error"></span>修复工具函数未加载`);
+                }
+                
+                resultDiv.className = results.some(r => r.includes('status-error')) ? 'test-result error' : 'test-result success';
+                resultDiv.innerHTML = results.join('<br>');
+                console.log('变量检查结果:', results);
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<span class="status-indicator status-error"></span>检查变量时出错: ${error.message}`;
+                console.error('检查变量时出错:', error);
+            }
+        }
+        
+        function initApiService() {
+            const resultDiv = document.getElementById('api-init-result');
+            
+            try {
+                console.log('开始初始化API服务...');
+                
+                // 先尝试调用修复脚本中的ensureApiService函数
+                if (window._fixUtils && window._fixUtils.ensureApiService) {
+                    console.log('使用修复工具中的ensureApiService函数');
+                    window._fixUtils.ensureApiService();
+                } else if (typeof ensureApiService === 'function') {
+                    console.log('直接调用ensureApiService函数');
+                    ensureApiService();
+                } else {
+                    console.log('手动创建API服务实例');
+                    // 手动创建API服务实例
+                    class ApiService {
+                        constructor() {
+                            this.baseUrl = 'http://localhost:50000/api';
+                            this.token = localStorage.getItem('authToken');
+                        }
+
+                        setToken(token) {
+                            this.token = token;
+                            if (token) {
+                                localStorage.setItem('authToken', token);
+                            } else {
+                                localStorage.removeItem('authToken');
+                            }
+                        }
+                        
+                        logout() {
+                            this.setToken(null);
+                            localStorage.removeItem('userCredentials');
+                            localStorage.removeItem('userLoggedIn');
+                            localStorage.removeItem('currentUser');
+                        }
+
+                        getToken() {
+                            return this.token;
+                        }
+
+                        isLoggedIn() {
+                            return !!this.token;
+                        }
+
+                        getHeaders() {
+                            const headers = {
+                                'Content-Type': 'application/json'
+                            };
+
+                            if (this.token) {
+                                headers['Authorization'] = `Bearer ${this.token}`;
+                            }
+
+                            return headers;
+                        }
+                    }
+                    
+                    window.apiService = new ApiService();
+                }
+                
+                if (window.apiService) {
+                    // 尝试恢复token
+                    const savedToken = localStorage.getItem('authToken');
+                    if (savedToken) {
+                        window.apiService.setToken(savedToken);
+                    }
+                    
+                    resultDiv.className = 'test-result success';
+                    resultDiv.innerHTML = '<span class="status-indicator status-ok"></span>API服务初始化成功！';
+                    console.log('API服务初始化成功');
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.innerHTML = '<span class="status-indicator status-error"></span>API服务初始化失败！';
+                    console.error('API服务初始化失败');
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<span class="status-indicator status-error"></span>初始化API服务时出错: ${error.message}`;
+                console.error('初始化API服务时出错:', error);
+            }
+        }
+        
+        function testAuth() {
+            try {
+                // 检查localStorage中的token
+                const savedToken = localStorage.getItem('authToken');
+                const tokenStatus = document.getElementById('token-status');
+                const tokenText = document.getElementById('token-text');
+                
+                if (savedToken) {
+                    tokenStatus.className = 'status-indicator status-ok';
+                    tokenText.textContent = 'localStorage中有保存的token';
+                } else {
+                    tokenStatus.className = 'status-indicator status-error';
+                    tokenText.textContent = 'localStorage中没有保存的token';
+                }
+                
+                // 检查API服务
+                const apiServiceStatus = document.getElementById('api-service-status');
+                const apiServiceText = document.getElementById('api-service-text');
+                const loginStatus = document.getElementById('login-status');
+                const loginStatusText = document.getElementById('login-status-text');
+                const authHeaderStatus = document.getElementById('auth-header-status');
+                const authHeaderText = document.getElementById('auth-header-text');
+                
+                if (window.apiService) {
+                    apiServiceStatus.className = 'status-indicator status-ok';
+                    apiServiceText.textContent = 'API服务已初始化';
+                    
+                    // 测试isLoggedIn方法
+                    const isLoggedIn = window.apiService.isLoggedIn();
+                    loginStatus.className = `status-indicator ${isLoggedIn ? 'status-ok' : 'status-error'}`;
+                    loginStatusText.textContent = `登录状态: ${isLoggedIn}`;
+                    
+                    // 测试getHeaders方法
+                    const headers = window.apiService.getHeaders();
+                    if (headers && headers['Authorization']) {
+                        authHeaderStatus.className = 'status-indicator status-ok';
+                        authHeaderText.textContent = 'Authorization头已设置';
+                    } else {
+                        authHeaderStatus.className = 'status-indicator status-error';
+                        authHeaderText.textContent = 'Authorization头未设置';
+                    }
+                } else {
+                    apiServiceStatus.className = 'status-indicator status-error';
+                    apiServiceText.textContent = 'API服务未初始化';
+                    loginStatus.className = 'status-indicator status-error';
+                    loginStatusText.textContent = '登录状态: 未知';
+                    authHeaderStatus.className = 'status-indicator status-error';
+                    authHeaderText.textContent = 'Authorization头未设置';
+                }
+                
+                // 更新结果样式
+                const resultDiv = document.getElementById('auth-result');
+                const hasError = 
+                    tokenStatus.className.includes('status-error') ||
+                    apiServiceStatus.className.includes('status-error') ||
+                    loginStatus.className.includes('status-error') ||
+                    authHeaderStatus.className.includes('status-error');
+                
+                resultDiv.className = hasError ? 'test-result error' : 'test-result success';
+                console.log('认证测试完成');
+            } catch (error) {
+                const resultDiv = document.getElementById('auth-result');
+                resultDiv.className = 'test-result error';
+                console.error('测试认证时出错:', error);
+            }
+        }
+        
+        function setTokenTest() {
+            try {
+                const tokenInput = document.getElementById('token-input');
+                const token = tokenInput.value.trim();
+                
+                if (window.apiService && window.apiService.setToken) {
+                    window.apiService.setToken(token);
+                    console.log('已设置测试token:', token);
+                    alert('Token已设置');
+                    testAuth(); // 自动测试认证状态
+                } else {
+                    alert('API服务未初始化');
+                }
+            } catch (error) {
+                console.error('设置token时出错:', error);
+                alert('设置token失败: ' + error.message);
+            }
+        }
+        
+        function clearTokenTest() {
+            try {
+                if (window.apiService && window.apiService.clearToken) {
+                    window.apiService.clearToken();
+                    console.log('已清除token');
+                    alert('Token已清除');
+                    testAuth(); // 自动测试认证状态
+                } else {
+                    // 回退方案：直接清除localStorage
+                    localStorage.removeItem('authToken');
+                    console.log('已通过localStorage清除token');
+                    alert('Token已清除');
+                    testAuth();
+                }
+            } catch (error) {
+                console.error('清除token时出错:', error);
+                alert('清除token失败: ' + error.message);
+            }
+        }
+        
+        function applyAllFixes() {
+            const resultDiv = document.getElementById('fixes-result');
+            
+            try {
+                if (window._fixUtils && window._fixUtils.applyAllFixes) {
+                    window._fixUtils.applyAllFixes();
+                    resultDiv.className = 'test-result success';
+                    resultDiv.innerHTML = '<span class="status-indicator status-ok"></span>所有修复已成功应用！';
+                    console.log('所有修复已成功应用');
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.innerHTML = '<span class="status-indicator status-error"></span>修复工具不可用，请先加载修复脚本';
+                    console.error('修复工具不可用');
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<span class="status-indicator status-error"></span>应用修复时出错: ${error.message}`;
+                console.error('应用修复时出错:', error);
+            }
+        }
+        
+        // 初始日志
+        console.log('测试页面已加载');
+    </script>
+</body>
+</html>

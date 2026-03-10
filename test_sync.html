@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同步测试 - 分析结果保存</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        .test-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .log-area {
+            margin-top: 30px;
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>分析结果保存同步测试</h1>
+    
+    <div class="test-container">
+        <h2>测试 1: 核心同步系统可用性检查</h2>
+        <button id="check-system-btn">检查核心同步系统</button>
+        <div id="system-status" class="status info">状态: 未检查</div>
+    </div>
+    
+    <div class="test-container">
+        <h2>测试 2: 保存示例分析结果</h2>
+        <button id="save-result-btn">保存测试分析结果</button>
+        <div id="save-status" class="status info">状态: 未执行</div>
+    </div>
+    
+    <div class="test-container">
+        <h2>测试 3: 获取分析历史</h2>
+        <button id="get-history-btn">获取分析历史</button>
+        <div class="result-box" id="history-result">历史记录将显示在此处</div>
+    </div>
+    
+    <div class="test-container">
+        <h2>测试 4: 清除所有测试数据</h2>
+        <button id="clear-data-btn">清除测试数据</button>
+        <div id="clear-status" class="status info">状态: 未执行</div>
+    </div>
+    
+    <div>
+        <h2>系统日志</h2>
+        <div id="system-log" class="log-area">初始化中...</div>
+    </div>
+
+    <script>
+        // 系统日志函数
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('system-log');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            // 对不同类型的消息使用不同的颜色标记
+            let colorCode = type === 'success' ? '\x1b[32m' : 
+                           type === 'error' ? '\x1b[31m' : 
+                           type === 'warning' ? '\x1b[33m' : 
+                           '\x1b[34m';
+            const resetCode = '\x1b[0m';
+            
+            // 在控制台输出带颜色的日志
+            console.log(`[${timestamp}] ${message}`);
+            
+            // 在页面输出日志（HTML格式）
+            let htmlColor = type === 'success' ? 'color: #48bb78' : 
+                           type === 'error' ? 'color: #f56565' : 
+                           type === 'warning' ? 'color: #ecc94b' : 
+                           'color: #4299e1';
+            
+            logDiv.innerHTML += `<div style="${htmlColor}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        log('核心同步系统初始化开始...', 'info');
+        
+        // 独立实现的核心同步系统
+        window.coreSyncSystem = {
+            // 系统状态
+            state: {
+                initialized: true,
+                isSyncing: false,
+                lastSyncTime: null
+            },
+            
+            // 存储键名常量
+            STORAGE_KEYS: {
+                ANALYSIS_HISTORY: 'analysisHistory',
+                USER_PROFILE: 'userProfile',
+                SYNC_CONFIG: 'syncConfig'
+            },
+            
+            // 添加分析记录
+            addAnalysisRecord: function(record) {
+                try {
+                    log('添加分析记录...', 'info');
+                    
+                    // 生成唯一ID
+                    const id = 'record_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                    const fullRecord = {
+                        ...record,
+                        id: id,
+                        timestamp: Date.now(),
+                        createdAt: record.createdAt || new Date().toISOString()
+                    };
+                    
+                    // 获取现有历史记录
+                    let history = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.ANALYSIS_HISTORY) || '[]');
+                    
+                    // 添加新记录到开头
+                    history.unshift(fullRecord);
+                    
+                    // 限制历史记录数量（最多保留100条）
+                    if (history.length > 100) {
+                        history = history.slice(0, 100);
+                        log('历史记录数量超过限制，已截断', 'warning');
+                    }
+                    
+                    // 保存到localStorage
+                    localStorage.setItem(this.STORAGE_KEYS.ANALYSIS_HISTORY, JSON.stringify(history));
+                    
+                    // 触发分析历史更新事件
+                    const event = new CustomEvent('coreAnalysisHistoryUpdated', {
+                        detail: {
+                            action: 'added',
+                            record: fullRecord,
+                            historyLength: history.length
+                        }
+                    });
+                    window.dispatchEvent(event);
+                    
+                    log(`记录添加成功: ${id}`, 'success');
+                    return fullRecord;
+                } catch (error) {
+                    log('添加记录失败: ' + error.message, 'error');
+                    throw error;
+                }
+            },
+            
+            // 获取所有分析历史
+            getAllAnalysisHistory: function() {
+                try {
+                    log('获取分析历史...', 'info');
+                    const history = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.ANALYSIS_HISTORY) || '[]');
+                    log(`成功获取 ${history.length} 条历史记录`, 'success');
+                    return history;
+                } catch (error) {
+                    log('获取历史记录失败: ' + error.message, 'error');
+                    return [];
+                }
+            },
+            
+            // 删除分析记录
+            deleteAnalysisRecord: function(recordId) {
+                try {
+                    log(`删除记录: ${recordId}`, 'info');
+                    
+                    // 获取现有历史记录
+                    let history = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.ANALYSIS_HISTORY) || '[]');
+                    const initialLength = history.length;
+                    
+                    // 过滤掉要删除的记录
+                    history = history.filter(record => record.id !== recordId);
+                    
+                    // 检查是否成功删除
+                    if (history.length < initialLength) {
+                        // 保存更新后的历史记录
+                        localStorage.setItem(this.STORAGE_KEYS.ANALYSIS_HISTORY, JSON.stringify(history));
+                        
+                        // 触发分析历史更新事件
+                        const event = new CustomEvent('coreAnalysisHistoryUpdated', {
+                            detail: {
+                                action: 'deleted',
+                                recordId: recordId,
+                                historyLength: history.length
+                            }
+                        });
+                        window.dispatchEvent(event);
+                        
+                        log(`记录 ${recordId} 删除成功`, 'success');
+                        return true;
+                    } else {
+                        log(`未找到记录: ${recordId}`, 'warning');
+                        return false;
+                    }
+                } catch (error) {
+                    log('删除记录失败: ' + error.message, 'error');
+                    return false;
+                }
+            },
+            
+            // 保存用户资料
+            saveUserProfile: function(profileData) {
+                try {
+                    log('保存用户资料...', 'info');
+                    localStorage.setItem(this.STORAGE_KEYS.USER_PROFILE, JSON.stringify(profileData));
+                    
+                    // 触发用户资料更新事件
+                    const event = new CustomEvent('coreProfileUpdated', {
+                        detail: profileData
+                    });
+                    window.dispatchEvent(event);
+                    
+                    log('用户资料保存成功', 'success');
+                    return profileData;
+                } catch (error) {
+                    log('保存用户资料失败: ' + error.message, 'error');
+                    return null;
+                }
+            },
+            
+            // 获取用户资料
+            getUserProfile: function() {
+                try {
+                    log('获取用户资料...', 'info');
+                    const profile = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.USER_PROFILE) || 'null');
+                    return profile;
+                } catch (error) {
+                    log('获取用户资料失败: ' + error.message, 'error');
+                    return null;
+                }
+            },
+            
+            // 同步分析历史（模拟）
+            syncAnalysisHistory: function() {
+                this.state.isSyncing = true;
+                log('开始同步分析历史...', 'info');
+                
+                // 模拟同步延迟
+                setTimeout(() => {
+                    this.state.isSyncing = false;
+                    this.state.lastSyncTime = new Date().toISOString();
+                    log('分析历史同步完成', 'success');
+                }, 1000);
+                
+                return true;
+            },
+            
+            // 清除所有数据
+            clearAllData: function() {
+                try {
+                    log('清除所有同步数据...', 'info');
+                    localStorage.removeItem(this.STORAGE_KEYS.ANALYSIS_HISTORY);
+                    localStorage.removeItem(this.STORAGE_KEYS.USER_PROFILE);
+                    log('所有数据已清除', 'success');
+                    return true;
+                } catch (error) {
+                    log('清除数据失败: ' + error.message, 'error');
+                    return false;
+                }
+            }
+        };
+        
+        // 初始化完成
+        log('核心同步系统初始化完成！', 'success');
+        log('可用方法: addAnalysisRecord, getAllAnalysisHistory, deleteAnalysisRecord, saveUserProfile, getUserProfile', 'info');
+        log('系统状态: 已初始化, 空闲', 'info');
+        
+        // 为了兼容性，同时设置一个统一同步管理器的基本版本
+        window.unifiedSyncManager = window.coreSyncSystem;
+        
+        // 初始化UI状态
+        document.getElementById('system-status').textContent = '✅ 核心同步系统已加载';
+        document.getElementById('system-status').className = 'status success';
+        
+        // 测试1: 检查核心同步系统可用性
+        document.getElementById('check-system-btn').addEventListener('click', function() {
+            const statusEl = document.getElementById('system-status');
+            
+            if (window.coreSyncSystem) {
+                let status = '✅ 核心同步系统已加载';
+                let methods = [];
+                
+                if (typeof window.coreSyncSystem.addAnalysisRecord === 'function') {
+                    methods.push('addAnalysisRecord');
+                }
+                if (typeof window.coreSyncSystem.getAllAnalysisHistory === 'function') {
+                    methods.push('getAllAnalysisHistory');
+                }
+                if (typeof window.coreSyncSystem.deleteAnalysisRecord === 'function') {
+                    methods.push('deleteAnalysisRecord');
+                }
+                
+                status += '<br>可用方法: ' + methods.join(', ');
+                statusEl.innerHTML = status;
+                statusEl.className = 'status success';
+            } else {
+                statusEl.textContent = '❌ 核心同步系统未加载';
+                statusEl.className = 'status error';
+            }
+        });
+        
+        // 测试2: 保存示例分析结果
+        document.getElementById('save-result-btn').addEventListener('click', async function() {
+            const statusEl = document.getElementById('save-status');
+            const now = new Date();
+            const date = now.toLocaleDateString('zh-CN');
+            
+            // 创建测试分析结果数据
+            const testResult = {
+                date: date,
+                model: '测试模型',
+                healthIndex: Math.floor(Math.random() * 30) + 70, // 70-99的随机值
+                confidence: (Math.random() * 15 + 85).toFixed(1) + '%', // 85-99.9%的随机值
+                details: {
+                    '情绪稳定性': Math.floor(Math.random() * 40) + 60,
+                    '压力水平': Math.floor(Math.random() * 50) + 30,
+                    '认知功能': Math.floor(Math.random() * 30) + 70,
+                    '睡眠质量': Math.floor(Math.random() * 40) + 60
+                },
+                advice: '这是一条测试建议，用于验证同步功能。',
+                timestamp: now.getTime(),
+                createdAt: now.toISOString()
+            };
+            
+            try {
+                statusEl.textContent = '⏳ 正在保存测试数据...';
+                statusEl.className = 'status info';
+                
+                // 优先使用核心同步系统
+                if (window.coreSyncSystem && typeof window.coreSyncSystem.addAnalysisRecord === 'function') {
+                    const savedRecord = window.coreSyncSystem.addAnalysisRecord(testResult);
+                    statusEl.innerHTML = `✅ 成功: 已保存测试分析结果<br>记录ID: ${savedRecord.id}<br>时间戳: ${savedRecord.timestamp}`;
+                    statusEl.className = 'status success';
+                } else {
+                    // 降级方案
+                    let historyRecords = JSON.parse(localStorage.getItem('analysisHistory')) || [];
+                    historyRecords.unshift(testResult);
+                    localStorage.setItem('analysisHistory', JSON.stringify(historyRecords));
+                    
+                    statusEl.textContent = '⚠️ 使用降级方案: 已保存到localStorage';
+                    statusEl.className = 'status warning';
+                }
+            } catch (error) {
+                statusEl.innerHTML = `❌ 保存失败: ${error.message}`;
+                statusEl.className = 'status error';
+            }
+        });
+        
+        // 测试3: 获取分析历史
+        document.getElementById('get-history-btn').addEventListener('click', function() {
+            const resultEl = document.getElementById('history-result');
+            
+            try {
+                let history = [];
+                
+                // 优先使用核心同步系统
+                if (window.coreSyncSystem && typeof window.coreSyncSystem.getAllAnalysisHistory === 'function') {
+                    history = window.coreSyncSystem.getAllAnalysisHistory();
+                } else {
+                    // 降级方案
+                    history = JSON.parse(localStorage.getItem('analysisHistory')) || [];
+                }
+                
+                if (history.length === 0) {
+                    resultEl.textContent = '📭 分析历史为空';
+                } else {
+                    resultEl.innerHTML = `📊 找到 ${history.length} 条记录:<br><pre>${JSON.stringify(history.slice(0, 5), null, 2)}</pre>${history.length > 5 ? `<br>... 仅显示前5条` : ''}`;
+                }
+            } catch (error) {
+                resultEl.innerHTML = `❌ 获取失败: ${error.message}`;
+            }
+        });
+        
+        // 测试4: 清除测试数据
+        document.getElementById('clear-data-btn').addEventListener('click', function() {
+            const statusEl = document.getElementById('clear-status');
+            
+            if (confirm('确定要清除所有测试数据吗？')) {
+                try {
+                    localStorage.removeItem('analysisHistory');
+                    statusEl.textContent = '✅ 已清除所有测试数据';
+                    statusEl.className = 'status success';
+                    document.getElementById('history-result').textContent = '历史记录将显示在此处';
+                } catch (error) {
+                    statusEl.innerHTML = `❌ 清除失败: ${error.message}`;
+                    statusEl.className = 'status error';
+                }
+            }
+        });
+        
+        // 监听分析历史更新事件
+        window.addEventListener('coreAnalysisHistoryUpdated', function(event) {
+            // 静默处理：检测到分析历史更新事件
+        });
+    </script>
+</body>
+</html>

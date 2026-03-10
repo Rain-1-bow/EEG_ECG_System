@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证统计功能</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Arial', sans-serif; }
+        .log-entry { margin: 5px 0; padding: 8px; border-radius: 4px; }
+        .log-info { background-color: #e3f2fd; }
+        .log-error { background-color: #ffebee; }
+        .log-success { background-color: #e8f5e9; }
+    </style>
+</head>
+<body class="bg-gray-50 p-4">
+    <div class="container mx-auto max-w-4xl">
+        <h1 class="text-2xl font-bold mb-6">updateStatistics 函数验证</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">测试结果</h2>
+            <div id="result" class="p-4 border rounded"></div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">执行日志</h2>
+            <div id="log-container" class="h-64 overflow-y-auto border rounded p-2"></div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的日志系统
+        const logContainer = document.getElementById('log-container');
+        const resultElement = document.getElementById('result');
+        
+        function log(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            console.log(`[验证] ${message}`);
+        }
+        
+        function setResult(message, success = true) {
+            resultElement.textContent = message;
+            resultElement.className = success ? 'p-4 border border-green-500 rounded bg-green-50' : 'p-4 border border-red-500 rounded bg-red-50';
+        }
+        
+        // 创建必要的DOM元素
+        function createMockDOMElements() {
+            log('创建必要的DOM元素...');
+            const elements = [
+                'total-analysis-count',
+                'current-month',
+                'monthly-max-score',
+                'monthly-max-status',
+                'latest-analysis-date',
+                'latest-analysis-info'
+            ];
+            
+            elements.forEach(id => {
+                const element = document.createElement('div');
+                element.id = id;
+                document.body.appendChild(element);
+            });
+            log(`成功创建 ${elements.length} 个DOM元素`);
+        }
+        
+        // 模拟unifiedSyncManager
+        function setupMockObjects() {
+            log('设置模拟对象...');
+            
+            // 模拟unifiedSyncManager
+            window.unifiedSyncManager = {
+                getAllAnalysisHistory: function(userId) {
+                    log(`获取用户 ${userId} 的分析历史`);
+                    return [
+                        {
+                            id: '1',
+                            userId: userId,
+                            username: '测试用户',
+                            score: 85,
+                            createdAt: new Date().toISOString(),
+                            content: '测试分析记录1'
+                        },
+                        {
+                            id: '2',
+                            userId: userId,
+                            username: '测试用户',
+                            score: 92,
+                            createdAt: new Date(Date.now() - 86400000).toISOString(), // 昨天
+                            content: '测试分析记录2'
+                        }
+                    ];
+                }
+            };
+            
+            // 模拟localStorage数据
+            localStorage.setItem('currentUser', JSON.stringify({ id: 'test-user-123', username: '测试用户' }));
+            log('模拟对象设置完成');
+        }
+        
+        // 测试函数
+        async function runTest() {
+            try {
+                log('开始测试updateStatistics函数');
+                
+                // 确保函数存在
+                if (typeof updateStatistics !== 'function') {
+                    throw new Error('updateStatistics函数未定义');
+                }
+                
+                log('执行updateStatistics函数...');
+                await updateStatistics();
+                
+                // 验证结果
+                const totalCount = document.getElementById('total-analysis-count')?.textContent;
+                const maxScore = document.getElementById('monthly-max-score')?.textContent;
+                
+                log(`测试完成: 总分析次数=${totalCount}, 最高得分=${maxScore}`);
+                
+                if (totalCount === '2' && maxScore === '92') {
+                    setResult('测试成功！updateStatistics函数正常工作', true);
+                } else {
+                    setResult(`测试不完整: 预期结果与实际不符\n总分析次数: ${totalCount}\n最高得分: ${maxScore}`, false);
+                }
+                
+            } catch (error) {
+                log(`测试失败: ${error.message}`, 'error');
+                setResult(`测试失败: ${error.message}`, false);
+            }
+        }
+        
+        // 初始化并执行测试
+        document.addEventListener('DOMContentLoaded', async () => {
+            log('DOM加载完成，开始初始化测试环境');
+            
+            // 创建DOM元素
+            createMockDOMElements();
+            
+            // 设置模拟对象
+            setupMockObjects();
+            
+            // 加载修复后的函数
+            const script = document.createElement('script');
+            script.src = 'fixed_update_statistics.js';
+            
+            script.onload = async () => {
+                log('fixed_update_statistics.js加载成功');
+                await runTest();
+            };
+            
+            script.onerror = () => {
+                log('fixed_update_statistics.js加载失败', 'error');
+                setResult('脚本加载失败，请检查文件路径', false);
+            };
+            
+            document.body.appendChild(script);
+        });
+    </script>
+</body>
+</html>

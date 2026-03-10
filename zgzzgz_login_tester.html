@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zgzzgz用户登录测试工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#7C3AED',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        danger: '#EF4444',
+                        info: '#3B82F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .shadow-card { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+            .transition-all-300 { transition: all 300ms ease-in-out; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex items-center justify-center p-4 font-sans">
+    <div class="w-full max-w-3xl bg-white rounded-xl shadow-card overflow-hidden">
+        <!-- 头部 -->
+        <div class="bg-gradient-to-r from-primary to-secondary py-6 px-8 text-white">
+            <h1 class="text-2xl font-bold flex items-center">
+                <i class="fa fa-user-circle mr-3"></i>
+                zgzzgz用户登录测试工具
+            </h1>
+            <p class="mt-2 opacity-90">专门用于验证zgzzgz用户登录功能的调试工具</p>
+        </div>
+        
+        <!-- 主要内容 -->
+        <div class="p-6 md:p-8">
+            <!-- 登录表单 -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">登录测试</h2>
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            value="zgzzgz" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all-300"
+                        >
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            value="zgzzgz123" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all-300"
+                        >
+                    </div>
+                    <div class="flex items-center">
+                        <input 
+                            type="checkbox" 
+                            id="rememberMe" 
+                            class="w-4 h-4 text-primary focus:ring-primary/50 border-gray-300 rounded"
+                        >
+                        <label for="rememberMe" class="ml-2 block text-sm text-gray-700">记住我</label>
+                    </div>
+                    <button 
+                        type="submit" 
+                        id="loginButton" 
+                        class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-all-300"
+                    >
+                        <span>执行登录测试</span>
+                        <i class="fa fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+            
+            <!-- 测试结果区域 -->
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h2 class="text-lg font-semibold mb-3 text-gray-800 flex items-center">
+                    <i class="fa fa-terminal mr-2"></i>
+                    测试日志
+                    <button id="clearLog" class="ml-auto text-xs text-gray-500 hover:text-primary px-2 py-1 bg-white rounded border border-gray-200">
+                        清空日志
+                    </button>
+                </h2>
+                <div id="testLog" class="bg-gray-900 text-gray-200 p-4 rounded-lg h-64 overflow-y-auto text-sm font-mono">
+                    <!-- 日志内容将在这里显示 -->
+                    <div class="text-gray-400">测试日志将显示在这里...</div>
+                </div>
+            </div>
+            
+            <!-- 状态显示 -->
+            <div id="statusIndicator" class="mt-4 p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm hidden">
+                <div class="flex items-center">
+                    <i id="statusIcon" class="fa fa-circle-o-notch fa-spin mr-2 text-primary"></i>
+                    <span id="statusText">准备就绪</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部信息 -->
+        <div class="bg-gray-50 py-4 px-6 border-t border-gray-200">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center text-sm text-gray-600">
+                <div>
+                    <p>测试用户: <span class="font-semibold text-primary">zgzzgz</span></p>
+                    <p>默认密码: <span class="font-semibold text-primary">zgzzgz123</span></p>
+                </div>
+                <div class="mt-2 md:mt-0">
+                    <button id="copyCredentials" class="text-primary hover:text-primary/80 flex items-center">
+                        <i class="fa fa-copy mr-1"></i>
+                        复制凭据
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 登录成功模态框 -->
+    <div id="successModal" class="fixed inset-0 flex items-center justify-center bg-black/50 z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa fa-check text-2xl text-success"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">登录测试成功！</h3>
+                <p class="text-gray-600 mb-4">zgzzgz用户登录功能正常工作</p>
+                <div class="bg-gray-50 p-4 rounded-lg text-left mb-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">用户信息</h4>
+                    <pre id="userInfoJson" class="text-xs bg-gray-900 text-gray-200 p-2 rounded overflow-x-auto"></pre>
+                </div>
+                <button id="closeSuccessModal" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-all-300">
+                    完成
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟浏览器环境
+        const localStorage = window.localStorage;
+        
+        // 有效用户列表 - 与login.html保持一致
+        const validUsers = {
+            'admin': { password: 'admin123', fullname: '管理员', avatar: 'https://picsum.photos/id/1/40/40' },
+            'zgzzgz': { password: 'zgzzgz123', fullname: '张工', avatar: 'https://picsum.photos/id/91/40/40' },
+            'user1': { password: 'user123', fullname: '周光泽', avatar: 'https://picsum.photos/id/91/40/40' },
+            'test': { password: 'test123', fullname: '测试用户', avatar: 'https://picsum.photos/id/64/40/40' }
+        };
+
+        // DOM 元素
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const rememberMeInput = document.getElementById('rememberMe');
+        const loginButton = document.getElementById('loginButton');
+        const testLog = document.getElementById('testLog');
+        const clearLogButton = document.getElementById('clearLog');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusIcon = document.getElementById('statusIcon');
+        const statusText = document.getElementById('statusText');
+        const successModal = document.getElementById('successModal');
+        const userInfoJson = document.getElementById('userInfoJson');
+        const closeSuccessModal = document.getElementById('closeSuccessModal');
+        const copyCredentialsButton = document.getElementById('copyCredentials');
+
+        // 日志记录函数
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = {
+                info: 'text-gray-300',
+                success: 'text-green-400',
+                error: 'text-red-400',
+                warning: 'text-yellow-400',
+                debug: 'text-blue-400'
+            }[type] || 'text-gray-300';
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = `mb-1 flex items-start`;
+            logEntry.innerHTML = `
+                <span class="text-gray-500 mr-2">[${timestamp}]</span>
+                <span class="${colorClass}">${escapeHtml(message)}</span>
+            `;
+            
+            testLog.appendChild(logEntry);
+            testLog.scrollTop = testLog.scrollHeight;
+        }
+
+        // HTML转义函数
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;')
+                .replace(/\n/g, '<br>');
+        }
+
+        // 清空日志
+        function clearLog() {
+            testLog.innerHTML = '<div class="text-gray-400">测试日志已清空</div>';
+        }
+
+        // 更新状态指示器
+        function updateStatus(text, isLoading = false, isError = false) {
+            statusIndicator.classList.remove('hidden');
+            statusText.textContent = text;
+            
+            statusIcon.className = '';
+            if (isLoading) {
+                statusIcon.className = 'fa fa-circle-o-notch fa-spin mr-2 text-primary';
+                statusIndicator.className = 'mt-4 p-3 rounded-lg bg-primary/10 border border-primary/30 text-sm';
+            } else if (isError) {
+                statusIcon.className = 'fa fa-exclamation-circle mr-2 text-danger';
+                statusIndicator.className = 'mt-4 p-3 rounded-lg bg-danger/10 border border-danger/30 text-sm';
+            } else {
+                statusIcon.className = 'fa fa-check-circle mr-2 text-success';
+                statusIndicator.className = 'mt-4 p-3 rounded-lg bg-success/10 border border-success/30 text-sm';
+            }
+        }
+
+        // 模拟处理登录成功
+        function handleLoginSuccess(username, password, rememberMe, user) {
+            log(`✅ 登录成功！欢迎回来，${user.fullname || username}`, 'success');
+            
+            // 创建用户资料对象
+            const userProfile = {
+                id: 'user_' + Date.now(),
+                username: username,
+                fullname: user.fullname || username,
+                email: `${username}@example.com`,
+                avatar: user.avatar || 'https://picsum.photos/id/64/40/40',
+                loggedIn: true,
+                loginTime: new Date().toISOString(),
+                rememberMe: rememberMe
+            };
+            
+            // 保存登录状态
+            try {
+                localStorage.setItem('userLoggedIn', 'true');
+                localStorage.setItem('currentUser', JSON.stringify(userProfile));
+                
+                if (rememberMe) {
+                    localStorage.setItem('userCredentials', JSON.stringify({
+                        username: username,
+                        fullname: userProfile.fullname,
+                        avatar: userProfile.avatar
+                    }));
+                    log('✅ 已保存登录状态（记住我）', 'success');
+                } else {
+                    // 使用会话存储保存凭据（可选）
+                    sessionStorage.setItem('userSession', JSON.stringify(userProfile));
+                    log('✅ 已保存会话状态（临时）', 'success');
+                }
+                
+                // 显示成功模态框
+                userInfoJson.textContent = JSON.stringify(userProfile, null, 2);
+                successModal.classList.remove('hidden');
+                
+                // 更新状态
+                updateStatus('登录测试成功！');
+                
+                // 显示localStorage状态
+                log('\n📁 localStorage 状态检查:', 'debug');
+                log(`- userLoggedIn: ${localStorage.getItem('userLoggedIn')}`, 'debug');
+                log(`- currentUser: ${localStorage.getItem('currentUser') ? '已设置' : '未设置'}`, 'debug');
+                log(`- userCredentials: ${localStorage.getItem('userCredentials') ? '已设置' : '未设置'}`, 'debug');
+                
+            } catch (storageError) {
+                log(`❌ 保存登录状态失败: ${storageError.message}`, 'error');
+                updateStatus('保存登录状态失败', false, true);
+            }
+        }
+
+        // 模拟登录测试
+        async function simulateLogin(username, password, rememberMe) {
+            log('\n🔍 开始登录测试...', 'info');
+            log(`用户名: ${username}`, 'debug');
+            log(`密码: ${password.replace(/./g, '*')} (长度: ${password.length})`, 'debug');
+            log(`记住我: ${rememberMe}`, 'debug');
+            
+            // 清理输入（与login.html保持一致）
+            const cleanedUsername = username.trim().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '');
+            const cleanedPassword = password.trim();
+            
+            log(`\n🧹 清理后的输入:`, 'info');
+            log(`清理后的用户名: "${cleanedUsername}" (长度: ${cleanedUsername.length})`, 'debug');
+            log(`清理后的密码: "${cleanedPassword.replace(/./g, '*')}" (长度: ${cleanedPassword.length})`, 'debug');
+            
+            // 验证输入不为空
+            if (!cleanedUsername || !cleanedPassword) {
+                log('❌ 错误: 用户名或密码不能为空', 'error');
+                return { success: false, error: '用户名或密码不能为空' };
+            }
+            
+            // 检查validUsers对象
+            log('\n📋 有效用户列表检查:', 'info');
+            log(`有效用户数量: ${Object.keys(validUsers).length}`, 'debug');
+            log(`可用用户名: ${Object.keys(validUsers).join(', ')}`, 'debug');
+            
+            // 查找用户
+            log(`\n👤 用户查找:`, 'info');
+            let user = validUsers[cleanedUsername];
+            log(`查找结果: ${user ? '找到用户' : '用户不存在'}`, 'debug');
+            
+            if (user) {
+                log(`用户信息: ${JSON.stringify(user)}`, 'debug');
+                
+                // 密码详细对比
+                log(`\n🔐 密码验证:`, 'info');
+                log(`存储的密码长度: ${user.password.length}`, 'debug');
+                log(`输入的密码长度: ${cleanedPassword.length}`, 'debug');
+                log(`密码比较: ${user.password === cleanedPassword ? '匹配' : '不匹配'}`, 'debug');
+                
+                if (user.password.length !== cleanedPassword.length) {
+                    log(`⚠️ 警告: 密码长度不匹配!`, 'warning');
+                }
+                
+                // 字符级别对比（用于调试）
+                if (user.password !== cleanedPassword) {
+                    log('\n🔍 字符级别对比:', 'warning');
+                    const maxLength = Math.max(user.password.length, cleanedPassword.length);
+                    for (let i = 0; i < maxLength; i++) {
+                        const storedChar = user.password[i] || 'undefined';
+                        const inputChar = cleanedPassword[i] || 'undefined';
+                        const isMatch = storedChar === inputChar;
+                        log(`位置 ${i}: 存储='${storedChar}' (${storedChar.charCodeAt(0)}), 输入='${inputChar}' (${inputChar.charCodeAt(0)}) → ${isMatch ? '✅' : '❌'}`, 'debug');
+                    }
+                }
+                
+                // 验证密码
+                if (user.password === cleanedPassword) {
+                    log('\n✅ 密码验证通过!', 'success');
+                    handleLoginSuccess(cleanedUsername, cleanedPassword, rememberMe, user);
+                    return { success: true, user: user };
+                } else {
+                    log('\n❌ 密码验证失败!', 'error');
+                    return { success: false, error: '密码不匹配' };
+                }
+            } else {
+                log(`\n❌ 用户 '${cleanedUsername}' 不在有效用户列表中`, 'error');
+                log(`有效用户: ${Object.keys(validUsers).join(', ')}`, 'warning');
+                return { success: false, error: '用户不存在' };
+            }
+        }
+
+        // 复制凭据到剪贴板
+        function copyCredentials() {
+            const credentials = `用户名: zgzzgz\n密码: zgzzgz123`;
+            navigator.clipboard.writeText(credentials).then(() => {
+                alert('凭据已复制到剪贴板');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        // 事件监听器
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+            const rememberMe = rememberMeInput.checked;
+            
+            // 更新UI状态
+            loginButton.disabled = true;
+            loginButton.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> 测试中...';
+            updateStatus('正在执行登录测试...', true);
+            
+            try {
+                // 执行登录测试
+                await simulateLogin(username, password, rememberMe);
+            } catch (error) {
+                log(`❌ 测试过程中发生异常: ${error.message}`, 'error');
+                updateStatus('测试失败', false, true);
+            } finally {
+                // 恢复UI状态
+                setTimeout(() => {
+                    loginButton.disabled = false;
+                    loginButton.innerHTML = '<span>执行登录测试</span><i class="fa fa-arrow-right"></i>';
+                }, 500);
+            }
+        });
+
+        clearLogButton.addEventListener('click', clearLog);
+        closeSuccessModal.addEventListener('click', () => {
+            successModal.classList.add('hidden');
+        });
+        copyCredentialsButton.addEventListener('click', copyCredentials);
+
+        // 初始日志
+        log('欢迎使用 zgzzgz 用户登录测试工具！', 'info');
+        log('此工具用于验证 zgzzgz 用户的登录功能是否正常工作。', 'info');
+        log('请输入凭据并点击「执行登录测试」开始验证。', 'info');
+        log('\n测试账户信息:', 'warning');
+        log('- 用户名: zgzzgz', 'warning');
+        log('- 密码: zgzzgz123', 'warning');
+    </script>
+</body>
+</html>

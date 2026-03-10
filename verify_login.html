@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录验证工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        .log-entry {
+            padding: 8px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+        }
+        .log-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .log-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .log-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .log-warn {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-4 text-center">登录验证工具</h1>
+        
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold mb-3">📋 测试账号信息（刚刚创建的）</h2>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p>用户名: <span id="test-username" class="font-mono"></span></p>
+                <p>密码: <span id="test-password" class="font-mono">test123456</span></p>
+            </div>
+        </div>
+        
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold mb-3">🔧 操作面板</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button id="clear-storage" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition-colors">
+                    <i class="fa fa-trash mr-2"></i>清除存储
+                </button>
+                <button id="check-storage" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors">
+                    <i class="fa fa-search mr-2"></i>检查存储
+                </button>
+                <button id="test-login" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors">
+                    <i class="fa fa-sign-in mr-2"></i>测试登录
+                </button>
+            </div>
+        </div>
+        
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold mb-3">📊 存储状态</h2>
+            <div id="storage-status" class="bg-gray-50 p-4 rounded-lg h-32 overflow-auto"></div>
+        </div>
+        
+        <div>
+            <h2 class="text-lg font-semibold mb-3">📝 操作日志</h2>
+            <div id="log-container" class="bg-gray-50 p-4 rounded-lg h-64 overflow-auto"></div>
+        </div>
+    </div>
+
+    <!-- 引入API服务 -->
+    <script src="api_service.js"></script>
+    
+    <script>
+        // 获取DOM元素
+        const clearStorageBtn = document.getElementById('clear-storage');
+        const checkStorageBtn = document.getElementById('check-storage');
+        const testLoginBtn = document.getElementById('test-login');
+        const storageStatusDiv = document.getElementById('storage-status');
+        const logContainer = document.getElementById('log-container');
+        const testUsernameSpan = document.getElementById('test-username');
+        const testPasswordSpan = document.getElementById('test-password');
+        
+        // 生成测试用户名（基于时间戳）
+        const generateTestUsername = () => {
+            return 'testuser' + Date.now();
+        };
+        
+        // 记录日志
+        const log = (message, type = 'info') => {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            
+            let icon = 'ℹ️';
+            if (type === 'success') icon = '✅';
+            else if (type === 'error') icon = '❌';
+            else if (type === 'warn') icon = '⚠️';
+            
+            logEntry.innerHTML = `[${timestamp}] ${icon} ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        };
+        
+        // 清除存储
+        const clearStorage = () => {
+            try {
+                log('开始清除存储...');
+                
+                // 清除所有相关的localStorage项
+                const keysToRemove = [
+                    'authToken', 'userLoggedIn', 'currentUser', 
+                    'userCredentials', 'rememberedUser', 'savedCredentials',
+                    'userRegistration'
+                ];
+                
+                keysToRemove.forEach(key => {
+                    localStorage.removeItem(key);
+                    log(`已清除: ${key}`, 'success');
+                });
+                
+                // 清除sessionStorage
+                sessionStorage.removeItem('userLoggedIn');
+                sessionStorage.removeItem('currentUser');
+                sessionStorage.removeItem('userCredentials');
+                log('已清除sessionStorage中的登录信息', 'success');
+                
+                // 清除全局变量
+                window._tempUserLoggedIn = undefined;
+                window._tempUserCredentials = undefined;
+                log('已清除全局变量', 'success');
+                
+                log('存储清除完成！', 'success');
+                checkStorage(); // 显示更新后的存储状态
+            } catch (error) {
+                log(`清除存储时出错: ${error.message}`, 'error');
+            }
+        };
+        
+        // 检查存储状态
+        const checkStorage = () => {
+            try {
+                let statusHtml = '';
+                
+                // 检查localStorage
+                statusHtml += '<h3 class="font-semibold mb-2">LocalStorage:</h3>';
+                const loginKeys = ['authToken', 'userLoggedIn', 'currentUser', 'userCredentials', 'rememberedUser'];
+                
+                loginKeys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    const exists = value !== null;
+                    const statusClass = exists ? 'text-green-600' : 'text-gray-400';
+                    const statusText = exists ? '✓ 存在' : '✗ 不存在';
+                    
+                    statusHtml += `<div class="flex justify-between py-1 border-b border-gray-100">
+                        <span>${key}:</span>
+                        <span class="${statusClass}">${statusText}</span>
+                    </div>`;
+                    
+                    // 对于复杂对象，显示部分内容
+                    if (exists && key === 'currentUser' && value.length > 50) {
+                        try {
+                            const parsed = JSON.parse(value);
+                            statusHtml += `<div class="pl-4 text-xs text-gray-500">
+                                username: ${parsed.username || 'N/A'}, 
+                                fullname: ${parsed.fullname || 'N/A'}
+                            </div>`;
+                        } catch (e) {
+                            statusHtml += '<div class="pl-4 text-xs text-red-500">无法解析JSON</div>';
+                        }
+                    }
+                });
+                
+                // 检查sessionStorage
+                statusHtml += '<h3 class="font-semibold mt-4 mb-2">SessionStorage:</h3>';
+                const hasSessionUser = sessionStorage.getItem('userLoggedIn') === 'true';
+                statusHtml += `<div class="${hasSessionUser ? 'text-green-600' : 'text-gray-400'}">`;
+                statusHtml += hasSessionUser ? '✓ 存在登录信息' : '✗ 不存在登录信息';
+                statusHtml += '</div>';
+                
+                // 检查全局变量
+                statusHtml += '<h3 class="font-semibold mt-4 mb-2">全局变量:</h3>';
+                const hasTempLogin = window._tempUserLoggedIn === true;
+                statusHtml += `<div class="${hasTempLogin ? 'text-green-600' : 'text-gray-400'}">`;
+                statusHtml += hasTempLogin ? '✓ 存在临时登录状态' : '✗ 不存在临时登录状态';
+                statusHtml += '</div>';
+                
+                storageStatusDiv.innerHTML = statusHtml;
+            } catch (error) {
+                storageStatusDiv.innerHTML = `<div class="text-red-500">检查存储时出错: ${error.message}</div>`;
+            }
+        };
+        
+        // 测试登录
+        const testLogin = async () => {
+            try {
+                // 生成新的测试用户
+                const testUsername = generateTestUsername();
+                const testPassword = 'test123456';
+                
+                testUsernameSpan.textContent = testUsername;
+                testPasswordSpan.textContent = testPassword;
+                
+                log(`开始测试注册和登录流程...`);
+                log(`测试用户名: ${testUsername}`);
+                
+                // 首先清除存储
+                clearStorage();
+                
+                // 1. 测试注册
+                log('正在注册新用户...');
+                const apiService = new ApiService();
+                
+                const registerResponse = await apiService.register({
+                    username: testUsername,
+                    password: testPassword,
+                    fullname: '测试用户',
+                    email: testUsername + '@test.com'
+                });
+                
+                log(`注册响应: ${JSON.stringify(registerResponse)}`, 'success');
+                
+                // 2. 测试登录
+                log('正在尝试登录...');
+                const loginResponse = await apiService.login({
+                    username: testUsername,
+                    password: testPassword
+                });
+                
+                log(`登录响应: ${JSON.stringify(loginResponse)}`, 'success');
+                
+                // 3. 检查登录状态
+                log('检查登录状态...');
+                const isLoggedIn = apiService.isLoggedIn();
+                log(`登录状态: ${isLoggedIn ? '已登录' : '未登录'}`, isLoggedIn ? 'success' : 'error');
+                
+                // 4. 检查存储
+                checkStorage();
+                
+                log('测试完成！请尝试使用上面的凭据在登录页面登录。', 'success');
+            } catch (error) {
+                log(`测试过程中出错: ${error.message}`, 'error');
+                log(`错误详情: ${error.stack}`, 'error');
+            }
+        };
+        
+        // 绑定事件监听器
+        clearStorageBtn.addEventListener('click', clearStorage);
+        checkStorageBtn.addEventListener('click', checkStorage);
+        testLoginBtn.addEventListener('click', testLogin);
+        
+        // 初始化页面
+        window.addEventListener('DOMContentLoaded', () => {
+            log('页面已加载，点击按钮开始测试');
+            checkStorage();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 抑郁症分析系统</title>
+    <!-- 性能优化：预加载关键资源 -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="description" content="智能心理健康分析平台，科学分析抑郁症，关注心理健康">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#8b5cf6',
+                        accent: '#ec4899',
+                        dark: '#1e1b4b',
+                        light: '#f8fafc',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0) translateZ(0)' },
+                            '50%': { transform: 'translateY(-10px) translateZ(0)' },
+                        }
+                    }
+                },
+            }
+        }
+    </script>
+    <style>
+        /* 必要的自定义样式 */
+        .content-auto { content-visibility: auto; }
+        .text-shadow { text-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08); }
+        .text-shadow-lg { text-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .gradient-mask-b {
+            mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+        }
+        .bg-blur {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        /* 平滑滚动 */
+        html { scroll-behavior: smooth; }
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* 侧边栏样式 */
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        .sidebar-link {
+            transition: all 0.3s ease;
+        }
+        .sidebar-link:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .sidebar-link.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 overflow-x-hidden min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 bg-white/90 bg-blur shadow-md">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16 sm:h-20">
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-heartbeat text-primary text-2xl sm:text-3xl"></i>
+                    <span class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">抑郁症分析系统</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html#about" class="text-gray-600 hover:text-primary transition-colors font-medium">关于抑郁症</a>
+                    <a href="index.html#features" class="text-gray-600 hover:text-primary transition-colors font-medium">系统功能</a>
+                    <a href="index.html#testimonials" class="text-gray-600 hover:text-primary transition-colors font-medium">用户反馈</a>
+                    <a href="analysis.html" class="text-gray-600 hover:text-primary transition-colors font-medium">开始分析</a>
+                    <a href="index.html" class="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white px-5 py-2.5 rounded-full font-medium transition-all shadow-lg shadow-primary/20">首页</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="menu-toggle" class="text-gray-700 hover:text-primary focus:outline-none">
+                        <i class="fa fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white/95 bg-blur shadow-lg border-t border-gray-100">
+            <div class="container mx-auto px-4 py-3">
+                <a href="index.html#about" class="block py-3 px-4 text-gray-600 hover:bg-primary/5 hover:text-primary rounded-lg transition-colors">关于抑郁症</a>
+                <a href="index.html#features" class="block py-3 px-4 text-gray-600 hover:bg-primary/5 hover:text-primary rounded-lg transition-colors">系统功能</a>
+                <a href="index.html#testimonials" class="block py-3 px-4 text-gray-600 hover:bg-primary/5 hover:text-primary rounded-lg transition-colors">用户反馈</a>
+                <a href="analysis.html" class="block py-3 px-4 text-gray-600 hover:bg-primary/5 hover:text-primary rounded-lg transition-colors">开始分析</a>
+                <a href="index.html" class="block py-3 px-4 mt-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-medium text-center">首页</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <main class="flex-grow pt-24 pb-20">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-6xl mx-auto">
+                <div class="grid md:grid-cols-4 gap-8">
+                    <!-- 左侧边栏 -->
+                    <div class="md:col-span-1">
+                        <div class="bg-white rounded-2xl shadow-xl p-6">
+                            <div class="flex flex-col items-center mb-8">
+                                <div class="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                    <i class="fa fa-user text-primary text-4xl"></i>
+                                </div>
+                                <h3 id="user-name" class="text-xl font-bold text-dark">用户名</h3>
+                                <p id="user-email" class="text-gray-500">user@example.com</p>
+                            </div>
+                            
+                            <ul class="space-y-2">
+                                <li>
+                                    <a href="#profile" class="sidebar-link active flex items-center space-x-3 p-3 rounded-lg">
+                                        <i class="fa fa-user-circle text-lg"></i>
+                                        <span>个人信息</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#history" class="sidebar-link flex items-center space-x-3 p-3 rounded-lg">
+                                        <i class="fa fa-history text-lg"></i>
+                                        <span>分析历史</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#stats" class="sidebar-link flex items-center space-x-3 p-3 rounded-lg">
+                                        <i class="fa fa-bar-chart text-lg"></i>
+                                        <span>健康统计</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#settings" class="sidebar-link flex items-center space-x-3 p-3 rounded-lg">
+                                        <i class="fa fa-cog text-lg"></i>
+                                        <span>账户设置</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#help" class="sidebar-link flex items-center space-x-3 p-3 rounded-lg">
+                                        <i class="fa fa-question-circle text-lg"></i>
+                                        <span>帮助中心</span>
+                                    </a>
+                                </li>
+                                <li class="mt-8">
+                                    <a href="#" id="logout-btn" class="flex items-center space-x-3 p-3 rounded-lg text-danger hover:bg-danger/5 transition-colors">
+                                        <i class="fa fa-sign-out text-lg"></i>
+                                        <span>退出登录</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- 右侧内容 -->
+                    <div class="md:col-span-3">
+                        <!-- 个人信息 -->
+                        <div id="profile-section" class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+                            <h2 class="text-2xl font-bold text-dark mb-6">个人信息</h2>
+                            
+                            <form id="profile-form" class="space-y-6">
+                                <div class="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
+                                        <input type="text" id="name" name="name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入您的姓名">
+                                    </div>
+                                    <div>
+                                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+                                        <input type="email" id="email" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入您的邮箱" disabled>
+                                    </div>
+                                    <div>
+                                        <label for="age" class="block text-sm font-medium text-gray-700 mb-2">年龄</label>
+                                        <input type="number" id="age" name="age" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入您的年龄">
+                                    </div>
+                                    <div>
+                                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">性别</label>
+                                        <select id="gender" name="gender" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                            <option value="">请选择</option>
+                                            <option value="male">男</option>
+                                            <option value="female">女</option>
+                                            <option value="other">其他</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label for="bio" class="block text-sm font-medium text-gray-700 mb-2">个人简介</label>
+                                    <textarea id="bio" name="bio" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入您的个人简介"></textarea>
+                                </div>
+                                
+                                <div>
+                                    <button type="submit" class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-medium transition-colors">
+                                        保存修改
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- 分析历史 -->
+                        <div id="history-section" class="bg-white rounded-2xl shadow-xl p-8 mb-8 hidden">
+                            <h2 class="text-2xl font-bold text-dark mb-6">分析历史</h2>
+                            
+                            <div id="history-empty" class="flex flex-col items-center justify-center py-12 text-center">
+                                <i class="fa fa-history text-5xl text-gray-300 mb-4"></i>
+                                <h3 class="text-xl font-medium text-gray-700 mb-2">暂无分析记录</h3>
+                                <p class="text-gray-500">完成分析后，记录将显示在这里</p>
+                                <a href="analysis.html" class="mt-4 bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-medium transition-colors">
+                                    开始分析
+                                </a>
+                            </div>
+                            
+                            <div id="history-records" class="hidden">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead>
+                                            <tr>
+                                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分析时间</th>
+                                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分析模型</th>
+                                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">抑郁倾向</th>
+                                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">置信度</th>
+                                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="history-table-body" class="bg-white divide-y divide-gray-200">
+                                            <!-- 历史记录将通过JavaScript动态添加 -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 健康统计 -->
+                        <div id="stats-section" class="bg-white rounded-2xl shadow-xl p-8 mb-8 hidden">
+                            <h2 class="text-2xl font-bold text-dark mb-6">健康统计</h2>
+                            
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div>
+                                    <h3 class="text-xl font-medium text-gray-700 mb-4">抑郁倾向趋势</h3>
+                                    <div class="bg-gray-50 rounded-lg p-4">
+                                        <canvas id="depression-chart" height="250"></canvas>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-medium text-gray-700 mb-4">情绪分布</h3>
+                                    <div class="bg-gray-50 rounded-lg p-4">
+                                        <canvas id="emotion-distribution-chart" height="250"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-8">
+                                <h3 class="text-xl font-medium text-gray-700 mb-4">健康指标</h3>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                        <p class="text-sm text-gray-500 mb-1">分析次数</p>
+                                        <p id="analysis-count" class="text-2xl font-bold text-primary">0</p>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                        <p class="text-sm text-gray-500 mb-1">平均抑郁倾向</p>
+                                        <p id="average-depression" class="text-2xl font-bold text-primary">0%</p>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                        <p class="text-sm text-gray-500 mb-1">最高置信度</p>
+                                        <p id="highest-confidence" class="text-2xl font-bold text-primary">0%</p>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                        <p class="text-sm text-gray-500 mb-1">最近分析</p>
+                                        <p id="last-analysis" class="text-sm font-medium text-gray-700">无</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 账户设置 -->
+                        <div id="settings-section" class="bg-white rounded-2xl shadow-xl p-8 mb-8 hidden">
+                            <h2 class="text-2xl font-bold text-dark mb-6">账户设置</h2>
+                            
+                            <div class="space-y-8">
+                                <div>
+                                    <h3 class="text-xl font-medium text-gray-700 mb-4">修改密码</h3>
+                                    <form id="password-form" class="space-y-4">
+                                        <div>
+                                            <label for="current-password" class="block text-sm font-medium text-gray-700 mb-2">当前密码</label>
+                                            <input type="password" id="current-password" name="current-password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入当前密码">
+                                        </div>
+                                        <div>
+                                            <label for="new-password" class="block text-sm font-medium text-gray-700 mb-2">新密码</label>
+                                            <input type="password" id="new-password" name="new-password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入新密码">
+                                            <p class="mt-1 text-xs text-gray-500">密码至少8位，包含字母和数字</p>
+                                        </div>
+                                        <div>
+                                            <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-2">确认新密码</label>
+                                            <input type="password" id="confirm-password" name="confirm-password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请再次输入新密码">
+                                        </div>
+                                        <div>
+                                            <button type="submit" class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-medium transition-colors">
+                                                修改密码
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="text-xl font-medium text-gray-700 mb-4">通知设置</h3>
+                                    <div class="space-y-4">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-700">分析结果通知</span>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="notification-analysis" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                            </label>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-700">定期评估提醒</span>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="notification-reminder" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                            </label>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-700">系统更新通知</span>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="notification-update" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="text-xl font-medium text-gray-700 mb-4">数据管理</h3>
+                                    <div class="space-y-4">
+                                        <button id="export-data" class="w-full flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-medium transition-colors">
+                                            <i class="fa fa-download"></i>
+                                            <span>导出我的数据</span>
+                                        </button>
+                                        <button id="delete-account" class="w-full flex items-center justify-center space-x-2 bg-danger/10 hover:bg-danger/20 text-danger px-6 py-2.5 rounded-lg font-medium transition-colors">
+                                            <i class="fa fa-trash"></i>
+                                            <span>删除账户</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 帮助中心 -->
+                        <div id="help-section" class="bg-white rounded-2xl shadow-xl p-8 hidden">
+                            <h2 class="text-2xl font-bold text-dark mb-6">帮助中心</h2>
+                            
+                            <div class="space-y-6">
+                                <div>
+                                    <h3 class="text-xl font-medium text-gray-700 mb-4">常见问题</h3>
+                                    <div class="space-y-4">
+                                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                            <button class="w-full flex justify-between items-center p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors">
+                                                <span class="font-medium">如何上传数据文件？</span>
+                                                <i class="fa fa-chevron-down text-gray-400"></i>
+                                            </button>
+                                            <div class="p-4 border-t border-gray-200">
+                                                <p class="text-gray-700">您可以在分析页面通过点击上传按钮或直接拖放文件到上传区域来上传数据文件。支持 .csv, .txt, .edf 格式的文件。</p>
+                                            </div>
+                                        </div>
+                                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                            <button class="w-full flex justify-between items-center p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors">
+                                                <span class="font-medium">分析结果如何解读？</span>
+                                                <i class="fa fa-chevron-down text-gray-400"></i>
+                                            </button>
+                                            <div class="p-4 border-t border-gray-200">
+                                                <p class="text-gray-700">分析结果会显示您的抑郁倾向程度和置信度。如果抑郁倾向为高，建议您寻求专业心理医生的帮助。系统还会根据分析结果提供个性化的建议。</p>
+                                            </div>
+                                        </div>
+                                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                            <button class="w-full flex justify-between items-center p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors">
+                                                <span class="font-medium">我的数据安全吗？</span>
+                                                <i class="fa fa-chevron-down text-gray-400"></i>
+                                            </button>
+                                            <div class="p-4 border-t border-gray-200">
+                                                <p class="text-gray-700">是的，我们高度重视您的隐私安全。所有数据均进行端到端加密处理，严格遵守医疗隐私法规，确保您的个人信息和健康数据不被泄露或滥用。</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="text-xl font-medium text-gray-700 mb-4">联系我们</h3>
+                                    <div class="bg-gray-50 rounded-lg p-6">
+                                        <div class="space-y-4">
+                                            <div class="flex items-start">
+                                                <i class="fa fa-envelope-o text-primary mt-1 mr-4"></i>
+                                                <div>
+                                                    <h4 class="font-medium text-gray-700">邮箱</h4>
+                                                    <p class="text-gray-500">1492636760@qq.com</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-start">
+                                                <i class="fa fa-phone text-primary mt-1 mr-4"></i>
+                                                <div>
+                                                    <h4 class="font-medium text-gray-700">电话</h4>
+                                                    <p class="text-gray-500">678-425-01</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-start">
+                                                <i class="fa fa-map-marker text-primary mt-1 mr-4"></i>
+                                                <div>
+                                                    <h4 class="font-medium text-gray-700">地址</h4>
+                                                    <p class="text-gray-500">中南民族大学-大学生活动中心-429室</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-gray-300 py-10">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <i class="fa fa-heartbeat text-primary text-2xl"></i>
+                    <span class="text-xl font-bold text-white">抑郁症分析系统</span>
+                </div>
+                <p class="text-gray-400 mb-6">
+                    借助先进技术，守护心理健康，让每个人都能拥有积极向上的生活状态。
+                </p>
+                <div class="flex justify-center space-x-4 mb-6">
+                    <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                        <i class="fa fa-weixin text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                        <i class="fa fa-weibo text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                        <i class="fa fa-qq text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                        <i class="fa fa-envelope-o text-xl"></i>
+                    </a>
+                </div>
+                <p class="text-gray-600">&copy; 2026 抑郁症分析系统. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // 移动端菜单切换
+        const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        menuToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // 侧边栏导航
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        const sections = {
+            'profile': document.getElementById('profile-section'),
+            'history': document.getElementById('history-section'),
+            'stats': document.getElementById('stats-section'),
+            'settings': document.getElementById('settings-section'),
+            'help': document.getElementById('help-section')
+        };
+        
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                const target = link.getAttribute('href').substring(1);
+                
+                // 更新侧边栏链接状态
+                sidebarLinks.forEach(sidebarLink => {
+                    sidebarLink.classList.remove('active');
+                });
+                link.classList.add('active');
+                
+                // 显示对应内容
+                Object.values(sections).forEach(section => {
+                    section.classList.add('hidden');
+                });
+                sections[target].classList.remove('hidden');
+            });
+        });
+        
+        // 加载用户信息
+        async function loadUserInfo() {
+            // 首先尝试从localStorage获取信息
+            let user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            
+            // 如果currentUser中没有姓名，尝试从userCredentials获取
+            if (!user.fullname && !user.name) {
+                const userCredentials = JSON.parse(localStorage.getItem('userCredentials') || '{}');
+                if (userCredentials.name) {
+                    user = { ...user, fullname: userCredentials.name, email: userCredentials.email };
+                }
+            }
+            
+            // 尝试从后端API获取最新用户信息
+            try {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    const response = await fetch('http://localhost:50000/api/users/profile', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const userData = await response.json();
+                        console.log('从后端加载用户信息:', userData);
+                        
+                        // 更新localStorage中的用户信息
+                        localStorage.setItem('currentUser', JSON.stringify(userData));
+                        user = userData;
+                    }
+                }
+            } catch (error) {
+                console.error('从后端加载用户信息失败:', error);
+                // 出错时继续使用localStorage中的信息
+            }
+            
+            if (user) {
+                // 优先使用fullname，然后是name，最后是username
+                const userName = user.fullname || user.name || user.username || '用户';
+                const userEmail = user.email || 'user@example.com';
+                
+                document.getElementById('user-name').textContent = userName;
+                document.getElementById('user-email').textContent = userEmail;
+                document.getElementById('name').value = userName;
+                document.getElementById('email').value = userEmail;
+            }
+        }
+        
+        // 加载分析历史
+        async function loadAnalysisHistory() {
+            const historyEmpty = document.getElementById('history-empty');
+            const historyRecords = document.getElementById('history-records');
+            const historyTableBody = document.getElementById('history-table-body');
+            
+            try {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    // 从后端获取分析历史
+                    const response = await fetch('http://localhost:50000/api/analysis/records', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const records = await response.json();
+                        console.log('从后端加载分析历史:', records);
+                        
+                        if (records.length === 0) {
+                            historyEmpty.classList.remove('hidden');
+                            historyRecords.classList.add('hidden');
+                        } else {
+                            historyEmpty.classList.add('hidden');
+                            historyRecords.classList.remove('hidden');
+                            
+                            // 清空表格
+                            historyTableBody.innerHTML = '';
+                            
+                            // 添加记录
+                            records.forEach(record => {
+                                const tr = document.createElement('tr');
+                                const date = new Date(record.timestamp).toLocaleString();
+                                
+                                // 解析分析数据
+                                let model = '未知';
+                                let depressionLevel = '未知';
+                                let confidence = '未知';
+                                
+                                if (record.analysis_data) {
+                                    try {
+                                        // 检查analysis_data是否已经是对象
+                                        const analysisData = typeof record.analysis_data === 'string' ? JSON.parse(record.analysis_data) : record.analysis_data;
+                                        model = analysisData.model || '未知';
+                                        depressionLevel = analysisData.depressionLevel || '未知';
+                                        confidence = analysisData.confidence || '未知';
+                                    } catch (e) {
+                                        console.error('解析分析数据失败:', e);
+                                    }
+                                }
+                                
+                                tr.innerHTML = `
+                                    <td class="px-6 py-4 whitespace-nowrap">${date}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">${model}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${depressionLevel === '高' ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'}">
+                                            ${depressionLevel}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">${confidence}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <a href="#" class="text-primary hover:text-primary/80 view-details">查看详情</a>
+                                    </td>
+                                `;
+                                
+                                // 添加点击事件
+                                tr.querySelector('.view-details').addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    viewAnalysisDetails(record);
+                                });
+                                
+                                historyTableBody.appendChild(tr);
+                            });
+                        }
+                    } else {
+                        console.error('从后端加载分析历史失败:', await response.json());
+                        // 回退到本地存储
+                        loadLocalAnalysisHistory();
+                    }
+                } else {
+                    // 未登录，使用本地存储
+                    loadLocalAnalysisHistory();
+                }
+            } catch (error) {
+                console.error('加载分析历史出错:', error);
+                // 出错时回退到本地存储
+                loadLocalAnalysisHistory();
+            }
+        }
+        
+        // 从本地存储加载分析历史
+        function loadLocalAnalysisHistory() {
+            const records = JSON.parse(localStorage.getItem('analysisRecords') || '[]');
+            console.log('从本地存储加载分析历史:', records);
+            const historyEmpty = document.getElementById('history-empty');
+            const historyRecords = document.getElementById('history-records');
+            const historyTableBody = document.getElementById('history-table-body');
+            
+            if (records.length === 0) {
+                historyEmpty.classList.remove('hidden');
+                historyRecords.classList.add('hidden');
+            } else {
+                historyEmpty.classList.add('hidden');
+                historyRecords.classList.remove('hidden');
+                
+                // 清空表格
+                historyTableBody.innerHTML = '';
+                
+                // 添加记录
+                records.forEach(record => {
+                    const tr = document.createElement('tr');
+                    const date = new Date(record.timestamp).toLocaleString();
+                    
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${record.model}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${record.depressionLevel === '高' ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'}">
+                                ${record.depressionLevel}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">${record.confidence}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="#" class="text-primary hover:text-primary/80 view-details">查看详情</a>
+                        </td>
+                    `;
+                    
+                    // 添加点击事件
+                    tr.querySelector('.view-details').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        viewAnalysisDetails(record);
+                    });
+                    
+                    historyTableBody.appendChild(tr);
+                });
+            }
+        }
+        
+        // 生成健康统计图表
+        function generateHealthStats() {
+            const records = JSON.parse(localStorage.getItem('analysisRecords') || '[]');
+            
+            // 更新健康指标
+            document.getElementById('analysis-count').textContent = records.length;
+            
+            if (records.length > 0) {
+                // 计算平均抑郁倾向
+                let totalDepression = 0;
+                let highestConfidence = 0;
+                
+                records.forEach(record => {
+                    totalDepression += record.depressionLevel === '高' ? 100 : 0;
+                    const confidence = parseFloat(record.confidence);
+                    if (confidence > highestConfidence) {
+                        highestConfidence = confidence;
+                    }
+                });
+                
+                const averageDepression = (totalDepression / records.length).toFixed(0);
+                document.getElementById('average-depression').textContent = averageDepression + '%';
+                document.getElementById('highest-confidence').textContent = highestConfidence.toFixed(1) + '%';
+                
+                // 最近分析时间
+                const lastRecord = records[0];
+                document.getElementById('last-analysis').textContent = new Date(lastRecord.timestamp).toLocaleString();
+                
+                // 生成抑郁倾向趋势图
+                generateDepressionChart(records);
+                
+                // 生成情绪分布图表
+                generateEmotionDistributionChart();
+            }
+        }
+        
+        // 生成抑郁倾向趋势图
+        function generateDepressionChart(records) {
+            const ctx = document.getElementById('depression-chart').getContext('2d');
+            
+            // 准备数据
+            const labels = records.slice(0, 10).reverse().map(record => {
+                return new Date(record.timestamp).toLocaleDateString();
+            });
+            
+            const data = records.slice(0, 10).reverse().map(record => {
+                return record.depressionLevel === '高' ? 100 : 0;
+            });
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '抑郁倾向',
+                        data: data,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 查看分析详情
+        function viewAnalysisDetails(record) {
+            // 创建模态框
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            
+            // 解析分析数据
+            let analysisData = record;
+            if (record.analysis_data) {
+                analysisData = typeof record.analysis_data === 'string' ? JSON.parse(record.analysis_data) : record.analysis_data;
+            }
+            
+            const emotions = ['积极', '中性', '消极', '焦虑', '抑郁'];
+            const date = new Date(record.timestamp || record.analysisTime).toLocaleString();
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-xl p-8 max-w-3xl w-full max-h-[80vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-dark">分析详情</h3>
+                        <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fa fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- 分析概览 -->
+                    <div class="mb-8">
+                        <h4 class="text-xl font-medium text-gray-700 mb-4">分析概览</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-500 mb-1">分析时间</p>
+                                <p class="font-medium text-gray-700">${date}</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-500 mb-1">分析模型</p>
+                                <p class="font-medium text-gray-700">${analysisData.model || record.model || '未知'}</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-500 mb-1">抑郁倾向</p>
+                                <p class="font-medium ${(analysisData.depressionLevel || record.depressionLevel) === '高' ? 'text-danger' : 'text-success'}">
+                                    ${analysisData.depressionLevel || record.depressionLevel || '未知'}
+                                </p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-500 mb-1">置信度</p>
+                                <p class="font-medium text-gray-700">${analysisData.confidence || record.confidence || '未知'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 情绪分析 -->
+                    <div class="mb-8">
+                        <h4 class="text-xl font-medium text-gray-700 mb-4">情绪分析</h4>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <canvas id="modal-emotion-chart" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- 专业建议 -->
+                    <div>
+                        <h4 class="text-xl font-medium text-gray-700 mb-4">专业建议</h4>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <ul class="space-y-2 text-gray-700">
+                                ${(analysisData.suggestions || record.suggestions || []).map(suggestion => `
+                                    <li class="flex items-start">
+                                        <i class="fa fa-check-circle text-primary mt-1 mr-3"></i>
+                                        <span>${suggestion}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 关闭模态框
+            document.getElementById('close-modal').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            // 生成情绪分析图表
+            setTimeout(() => {
+                const ctx = document.getElementById('modal-emotion-chart').getContext('2d');
+                const emotionScores = analysisData.emotionScores || record.emotionScores || emotions.map(() => 0);
+                
+                const colors = [
+                    'rgba(16, 185, 129, 0.7)',  // 积极 - 绿色
+                    'rgba(59, 130, 246, 0.7)',  // 中性 - 蓝色
+                    'rgba(245, 158, 11, 0.7)',  // 消极 - 黄色
+                    'rgba(236, 72, 153, 0.7)',  // 焦虑 - 粉色
+                    'rgba(239, 68, 68, 0.7)'    // 抑郁 - 红色
+                ];
+                
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: emotions,
+                        datasets: [{
+                            label: '情绪得分',
+                            data: emotionScores,
+                            backgroundColor: colors,
+                            borderColor: colors.map(color => color.replace('0.7', '1')),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: '得分'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: '情绪类型'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }, 100);
+        }
+        
+        // 生成情绪分布图表
+        function generateEmotionDistributionChart() {
+            const ctx = document.getElementById('emotion-distribution-chart').getContext('2d');
+            const records = JSON.parse(localStorage.getItem('analysisRecords') || '[]');
+            
+            // 准备情绪数据
+            const emotions = ['积极', '中性', '消极', '焦虑', '抑郁'];
+            let data = [0, 0, 0, 0, 0];
+            
+            if (records.length > 0) {
+                // 计算平均情绪得分
+                records.forEach(record => {
+                    if (record.emotionScores) {
+                        for (let i = 0; i < emotions.length; i++) {
+                            data[i] += record.emotionScores[i] / records.length;
+                        }
+                    }
+                });
+            } else {
+                // 模拟情绪数据
+                data = emotions.map(() => Math.floor(Math.random() * 30) + 10);
+            }
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: emotions,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(245, 158, 11, 0.7)',
+                            'rgba(236, 72, 153, 0.7)',
+                            'rgba(239, 68, 68, 0.7)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 个人信息表单提交
+        document.getElementById('profile-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const age = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+            const bio = document.getElementById('bio').value;
+            
+            // 更新用户信息
+            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            user.name = name;
+            user.age = age;
+            user.gender = gender;
+            user.bio = bio;
+            
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            
+            // 更新页面显示
+            document.getElementById('user-name').textContent = name;
+            
+            alert('个人信息已更新');
+        });
+        
+        // 密码修改表单提交
+        document.getElementById('password-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            // 表单验证
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('请填写所有字段');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                alert('两次输入的密码不一致');
+                return;
+            }
+            
+            if (newPassword.length < 8) {
+                alert('密码至少需要8位');
+                return;
+            }
+            
+            // 模拟密码修改
+            alert('密码修改成功');
+            
+            // 清空表单
+            document.getElementById('password-form').reset();
+        });
+        
+        // 退出登录
+        document.getElementById('logout-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // 清除所有登录相关的localStorage数据
+            localStorage.removeItem('userCredentials');
+            localStorage.removeItem('userLoggedIn');
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('savedCredentials');
+            
+            // 显示退出成功提示
+            alert('退出成功');
+            
+            // 跳转到登录页面
+            window.location.href = 'login.html';
+        });
+        
+        // 导出数据
+        document.getElementById('export-data').addEventListener('click', function() {
+            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const records = JSON.parse(localStorage.getItem('analysisRecords') || '[]');
+            
+            const data = {
+                user: user,
+                records: records,
+                exportDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'depression-analysis-data.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        });
+        
+        // 删除账户
+        document.getElementById('delete-account').addEventListener('click', function() {
+            if (confirm('确定要删除您的账户吗？此操作不可恢复。')) {
+                // 清除所有数据
+                localStorage.clear();
+                alert('账户已删除');
+                window.location.href = 'login.html';
+            }
+        });
+        
+        // 页面加载时执行
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadUserInfo();
+            loadAnalysisHistory();
+            generateHealthStats();
+        });
+    </script>
+</body>
+</html>
